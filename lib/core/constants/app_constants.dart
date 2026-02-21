@@ -15,10 +15,10 @@ class AppConstants {
       icon: '🍣',
     ),
     GameInfo(
-      id: 'game1',
-      title: 'ゲーム1',
-      description: 'プレースホルダー：ゲーム1の説明',
-      icon: '🎮',
+      id: 'deshellingCrab',
+      title: '蟹解体チャレンジ',
+      description: '蟹を正しい手順で解体しよう！',
+      icon: '🦀',
     ),
     GameInfo(
       id: 'game2',

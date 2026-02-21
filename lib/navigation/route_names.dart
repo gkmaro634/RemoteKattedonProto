@@ -7,8 +7,8 @@ class RouteNames {
   static const String katteedomStart = '/kattedon-start';
   static const String katteedomGame = '/kattedon-game';
 
-  static const String game1Start = '/game1-start';
-  static const String game1Game = '/game1-game';
+  static const String deshellingCrabStart = '/deshellingCrab-start';
+  static const String deshellingCrabGame = '/deshellingCrab-game';
 
   static const String game2Start = '/game2-start';
   static const String game2Game = '/game2-game';

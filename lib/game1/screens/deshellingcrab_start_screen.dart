@@ -5,14 +5,14 @@ import 'package:remote_kattedon/core/constants/app_constants.dart';
 import 'package:remote_kattedon/widgets/common_widgets.dart';
 import 'package:remote_kattedon/navigation/route_names.dart';
 
-class Game1StartScreen extends StatelessWidget {
-  const Game1StartScreen({Key? key}) : super(key: key);
+class DeshellingCrabStartScreen extends StatelessWidget {
+  const DeshellingCrabStartScreen({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('ゲーム1'),
+        title: const Text('蟹解体チャレンジ'),
         elevation: 0,
       ),
       body: SafeArea(
@@ -26,7 +26,7 @@ class Game1StartScreen extends StatelessWidget {
                 children: [
                   // ゲームアイコン
                   Text(
-                    '🎮',
+                    '🦀',
                     style: Theme.of(context).textTheme.displayLarge?.copyWith(
                       fontSize: 80,
                     ),
@@ -35,11 +35,11 @@ class Game1StartScreen extends StatelessWidget {
 
                   // ゲームタイトル
                   GameDescriptionCard(
-                    title: 'ゲーム1',
-                    description: 'このゲームのプレースホルダー説明です。\n\n'
-                        '実装時に適切なゲーム説明に置き換えてください。\n\n'
-                        '複数のゲームを並行開発できるように設計されています。',
-                    accentColor: AppTheme.game1Color,
+                    title: '蟹解体チャレンジ',
+                    description: '蟹を正しい手順で上手に解体しよう！\n\n'
+                        '新鮮な蟹を最高のおいしさで食べるために、\n'
+                        'JFいしかわの漁師直伝の解体テクニックを学びます。',
+                    accentColor: AppTheme.deshellingCrabColor,
                   ),
                   const SizedBox(height: AppConstants.largePadding * 1.5),
 
@@ -47,18 +47,15 @@ class Game1StartScreen extends StatelessWidget {
                   GameStartButton(
                     label: 'START',
                     onPressed: () {
-                      // TODO: 実装時にゲーム画面に遷移
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('ゲーム画面に遷移します')),
-                      );
+                      // ゲーム画面に遷移
+                      context.go(RouteNames.deshellingCrabGame);
                     },
                   ),
-                  const SizedBox(height: AppConstants.defaultPadding),
+                  const SizedBox(height: AppConstants.largePadding),
 
                   // 戻るボタン
                   GoBackButton(
                     onPressed: () => context.go(RouteNames.gameSelection),
-                    label: 'ゲーム一覧に戻る',
                   ),
                 ],
               ),
