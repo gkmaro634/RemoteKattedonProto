@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../models/models.dart';
 import '../providers/game_notifier.dart';
+import '../../../navigation/route_names.dart';
 
 /// 各ステップに対応する蟹画像のアセットパス
 /// `asetts.md` の定義に基づき、「次のアクションを行う前の状態」の画像を表示する。
@@ -83,7 +85,13 @@ class _GameScreenState extends ConsumerState<GameScreen> {
 
     if (game.isGameOver) {
       return Scaffold(
-        appBar: AppBar(title: const Text('蟹解体ゲーム')),
+        appBar: AppBar(
+          title: const Text('蟹解体ゲーム'),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => context.go(RouteNames.deshellingCrabStart),
+          ),
+        ),
         body: SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(16),
@@ -136,7 +144,13 @@ class _GameScreenState extends ConsumerState<GameScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('蟹解体ゲーム')),
+      appBar: AppBar(
+        title: const Text('蟹解体ゲーム'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go(RouteNames.deshellingCrabStart),
+        ),
+      ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
