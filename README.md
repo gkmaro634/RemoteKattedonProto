@@ -24,7 +24,7 @@ lib/
 │   └── game_selection_screen.dart     # ゲーム選択画面
 ├── widgets/                           # 共通ウィジェット
 │   └── common_widgets.dart            # GameCard等の再利用可能なUI
-├── game1/                             # 蟹解体ゲーム (deshellingCrab)
+├── game_deshelling_crab/              # 蟹解体ゲーム (deshellingCrab)
 │   ├── screens/
 │   │   ├── deshellingcrab_start_screen.dart # ゲーム開始画面
 │   │   └── presentation/screens/game_screen.dart # ゲーム実行画面

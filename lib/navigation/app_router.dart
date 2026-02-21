@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:remote_kattedon/screens/home_screen.dart';
 import 'package:remote_kattedon/screens/game_selection_screen.dart';
-import 'package:remote_kattedon/game1/screens/deshellingcrab_start_screen.dart';
-import 'package:remote_kattedon/game1/presentation/screens/game_screen.dart';
+import 'package:remote_kattedon/game_deshelling_crab/screens/deshellingcrab_start_screen.dart';
+import 'package:remote_kattedon/game_deshelling_crab/presentation/screens/game_screen.dart';
 import 'package:remote_kattedon/game2/screens/game2_start_screen.dart';
 import 'route_names.dart';
 
