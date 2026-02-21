@@ -4,9 +4,6 @@ class RouteNames {
   static const String gameSelection = '/game-selection';
 
   // ゲームルート
-  static const String katteedomStart = '/kattedon-start';
-  static const String katteedomGame = '/kattedon-game';
-
   static const String deshellingCrabStart = '/deshellingCrab-start';
   static const String deshellingCrabGame = '/deshellingCrab-game';
 

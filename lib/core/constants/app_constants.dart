@@ -9,12 +9,6 @@ class AppConstants {
   // ゲーム定義
   static const List<GameInfo> availableGames = [
     GameInfo(
-      id: 'kattedon',
-      title: '勝手丼マスター',
-      description: '魚介類を選んで海鮮丼を作ろう！\n漁業の知識も自然に学べます。',
-      icon: '🍣',
-    ),
-    GameInfo(
       id: 'deshellingCrab',
       title: '蟹解体チャレンジ',
       description: '蟹を正しい手順で解体しよう！',

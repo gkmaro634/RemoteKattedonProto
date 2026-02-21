@@ -24,16 +24,15 @@ lib/
 │   └── game_selection_screen.dart     # ゲーム選択画面
 ├── widgets/                           # 共通ウィジェット
 │   └── common_widgets.dart            # GameCard等の再利用可能なUI
-├── kattedon/                          # 勝手丼ゲーム
+├── game1/                             # 蟹解体ゲーム (deshellingCrab)
 │   ├── screens/
-│   │   └── kattedon_start_screen.dart # ゲーム開始画面（実装時にゲーム画面を追加）
-│   └── models/
-│       └── kattedon_models.dart       # ゲーム状態管理
-├── game1/                             # ゲーム1（拡張用テンプレート）
-│   ├── screens/
-│   │   └── game1_start_screen.dart
-│   └── models/
-│       └── game1_models.dart
+│   │   ├── deshellingcrab_start_screen.dart # ゲーム開始画面
+│   │   └── presentation/screens/game_screen.dart # ゲーム実行画面
+│   ├── models/
+│   │   └── models.dart                # ゲーム状態管理
+│   └── presentation/
+│       └── providers/
+│           └── game_notifier.dart     # Riverpod状態管理
 └── game2/                             # ゲーム2（拡張用テンプレート）
     ├── screens/
     │   └── game2_start_screen.dart

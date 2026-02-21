@@ -14,7 +14,6 @@ class GameSelectionScreen extends StatefulWidget {
 
 class _GameSelectionScreenState extends State<GameSelectionScreen> {
   late final Map<String, String> _gameRoutes = {
-    'kattedon': RouteNames.katteedomStart,
     'deshellingCrab': RouteNames.deshellingCrabStart,
     'game2': RouteNames.game2Start,
   };
@@ -94,7 +93,6 @@ class _GameSelectionScreenState extends State<GameSelectionScreen> {
                     itemBuilder: (context, index) {
                       final game = AppConstants.availableGames[index];
                       final gameColors = {
-                        'kattedon': AppTheme.katteedomColor,
                         'deshellingCrab': AppTheme.deshellingCrabColor,
                         'game2': AppTheme.game2Color,
                       };

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:remote_kattedon/screens/home_screen.dart';
 import 'package:remote_kattedon/screens/game_selection_screen.dart';
-import 'package:remote_kattedon/kattedon/screens/kattedon_start_screen.dart';
 import 'package:remote_kattedon/game1/screens/deshellingcrab_start_screen.dart';
 import 'package:remote_kattedon/game1/presentation/screens/game_screen.dart';
 import 'package:remote_kattedon/game2/screens/game2_start_screen.dart';
@@ -21,11 +20,6 @@ class AppRouter {
       GoRoute(
         path: RouteNames.gameSelection,
         builder: (context, state) => const GameSelectionScreen(),
-      ),
-      // 勝手丼ゲーム開始画面
-      GoRoute(
-        path: RouteNames.katteedomStart,
-        builder: (context, state) => const KatteedomStartScreen(),
       ),
       // 蟹解体ゲーム開始画面
       GoRoute(
