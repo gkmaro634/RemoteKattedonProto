@@ -12,7 +12,7 @@ class Game2StartScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('ゲーム2'),
+        title: const Text('石川釣りゲーム'),
         elevation: 0,
       ),
       body: SafeArea(
@@ -35,10 +35,8 @@ class Game2StartScreen extends StatelessWidget {
 
                   // ゲームタイトル
                   GameDescriptionCard(
-                    title: 'ゲーム2',
-                    description: 'このゲームのプレースホルダー説明です。\n\n'
-                        '実装時に適切なゲーム説明に置き換えてください。\n\n'
-                        '複数のゲームを並行開発できるように設計されています。',
+                    title: '石川釣りゲーム',
+                    description: '石川県の色んな漁場を巡りながら、釣りを楽しむゲームです。\n\n',
                     accentColor: AppTheme.game2Color,
                   ),
                   const SizedBox(height: AppConstants.largePadding * 1.5),

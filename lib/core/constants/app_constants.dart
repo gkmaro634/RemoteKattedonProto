@@ -15,9 +15,9 @@ class AppConstants {
       icon: '🦀',
     ),
     GameInfo(
-      id: 'game2',
-      title: 'ゲーム2',
-      description: 'プレースホルダー：ゲーム2の説明',
+      id: '石川釣りゲーム',
+      title: '石川釣りゲーム',
+      description: '石川県の色んな漁場を巡りながら、釣りを楽しむゲームです。\n\n',
       icon: '🎯',
     ),
   ];
