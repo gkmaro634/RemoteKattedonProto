@@ -26,7 +26,7 @@ class Game2StartScreen extends StatelessWidget {
                 children: [
                   // ゲームアイコン
                   Text(
-                    '🎯',
+                    '🎣',
                     style: Theme.of(context).textTheme.displayLarge?.copyWith(
                       fontSize: 80,
                     ),
