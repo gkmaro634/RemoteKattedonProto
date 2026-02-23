@@ -13,9 +13,7 @@ deploy:
 	firebase deploy
 
 # Build + Deploy
-release:
-	build
-	deploy
+release: build deploy
 
 # Clean build cache
 clean:
