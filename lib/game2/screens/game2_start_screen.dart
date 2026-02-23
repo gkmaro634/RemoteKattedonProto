@@ -6,7 +6,8 @@ import 'package:remote_kattedon/widgets/common_widgets.dart';
 import 'package:remote_kattedon/navigation/route_names.dart';
 
 class Game2StartScreen extends StatelessWidget {
-  const Game2StartScreen({Key? key}) : super(key: key);
+class FishingInIshikawaStartScreen extends StatelessWidget {
+  const FishingInIshikawaStartScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -37,7 +38,7 @@ class Game2StartScreen extends StatelessWidget {
                   GameDescriptionCard(
                     title: '石川釣りゲーム',
                     description: '石川県の色んな漁場を巡りながら、釣りを楽しむゲームです。\n\n',
-                    accentColor: AppTheme.game2Color,
+                    accentColor: AppTheme.fishingInIshikawaColor,
                   ),
                   const SizedBox(height: AppConstants.largePadding * 1.5),
 
@@ -45,10 +46,7 @@ class Game2StartScreen extends StatelessWidget {
                   GameStartButton(
                     label: 'START',
                     onPressed: () {
-                      // TODO: 実装時にゲーム画面に遷移
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('ゲーム画面に遷移します')),
-                      );
+                      context.go(RouteNames.fishingInIshikawaGame);
                     },
                   ),
                   const SizedBox(height: AppConstants.defaultPadding),

@@ -5,6 +5,7 @@ import 'package:remote_kattedon/screens/game_selection_screen.dart';
 import 'package:remote_kattedon/game_deshelling_crab/screens/deshellingcrab_start_screen.dart';
 import 'package:remote_kattedon/game_deshelling_crab/presentation/screens/game_screen.dart';
 import 'package:remote_kattedon/game2/screens/game2_start_screen.dart';
+import 'package:remote_kattedon/game2/screens/game2_game_screen.dart';
 import 'route_names.dart';
 
 class AppRouter {
@@ -35,6 +36,11 @@ class AppRouter {
       GoRoute(
         path: RouteNames.game2Start,
         builder: (context, state) => const Game2StartScreen(),
+      ),
+      // ゲーム2画面
+      GoRoute(
+        path: RouteNames.game2Game,
+        builder: (context, state) => const Game2GameScreen(),
       ),
     ],
   );

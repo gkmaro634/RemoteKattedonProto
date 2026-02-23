@@ -7,6 +7,6 @@ class RouteNames {
   static const String deshellingCrabStart = '/deshellingCrab-start';
   static const String deshellingCrabGame = '/deshellingCrab-game';
 
-  static const String game2Start = '/game2-start';
-  static const String game2Game = '/game2-game';
+  static const String fishingInIshikawaStart = '/fishing-in-ishikawa-start';
+  static const String fishingInIshikawaGame = '/fishing-in-ishikawa-game';
 }
