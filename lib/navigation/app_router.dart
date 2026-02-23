@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:remote_kattedon/screens/home_screen.dart';
 import 'package:remote_kattedon/screens/game_selection_screen.dart';
@@ -34,13 +33,13 @@ class AppRouter {
       ),
       // ゲーム2開始画面
       GoRoute(
-        path: RouteNames.game2Start,
-        builder: (context, state) => const Game2StartScreen(),
+        path: RouteNames.fishingInIshikawaStart,
+        builder: (context, state) => const FishingInIshikawaStartScreen(),
       ),
       // ゲーム2画面
       GoRoute(
-        path: RouteNames.game2Game,
-        builder: (context, state) => const Game2GameScreen(),
+        path: RouteNames.fishingInIshikawaGame,
+        builder: (context, state) => const FishingInIshikawaGameScreen(),
       ),
     ],
   );

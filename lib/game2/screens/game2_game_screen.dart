@@ -11,14 +11,15 @@ enum FishingPhase {
   result,
 }
 
-class Game2GameScreen extends StatefulWidget {
-  const Game2GameScreen({super.key});
+class FishingInIshikawaGameScreen extends StatefulWidget {
+  const FishingInIshikawaGameScreen({super.key});
 
   @override
-  State<Game2GameScreen> createState() => _Game2GameScreenState();
+  State<FishingInIshikawaGameScreen> createState() =>
+      _FishingInIshikawaGameScreenState();
 }
 
-class _Game2GameScreenState extends State<Game2GameScreen>
+class _FishingInIshikawaGameScreenState extends State<FishingInIshikawaGameScreen>
     with SingleTickerProviderStateMixin {
   final Random _random = Random();
 

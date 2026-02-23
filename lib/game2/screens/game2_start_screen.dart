@@ -5,7 +5,6 @@ import 'package:remote_kattedon/core/constants/app_constants.dart';
 import 'package:remote_kattedon/widgets/common_widgets.dart';
 import 'package:remote_kattedon/navigation/route_names.dart';
 
-class Game2StartScreen extends StatelessWidget {
 class FishingInIshikawaStartScreen extends StatelessWidget {
   const FishingInIshikawaStartScreen({super.key});
 
