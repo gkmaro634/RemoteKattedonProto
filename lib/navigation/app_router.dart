@@ -3,8 +3,8 @@ import 'package:remote_kattedon/screens/home_screen.dart';
 import 'package:remote_kattedon/screens/game_selection_screen.dart';
 import 'package:remote_kattedon/game_deshelling_crab/screens/deshellingcrab_start_screen.dart';
 import 'package:remote_kattedon/game_deshelling_crab/presentation/screens/game_screen.dart';
-import 'package:remote_kattedon/game2/screens/game2_start_screen.dart';
-import 'package:remote_kattedon/game2/screens/game2_game_screen.dart';
+import 'package:remote_kattedon/fishing_in_ishikawa/screens/fishing_start_screen.dart';
+import 'package:remote_kattedon/fishing_in_ishikawa/screens/fishing_game_screen.dart';
 import 'route_names.dart';
 
 class AppRouter {
@@ -31,12 +31,12 @@ class AppRouter {
         path: RouteNames.deshellingCrabGame,
         builder: (context, state) => const GameScreen(),
       ),
-      // ゲーム2開始画面
+      // 石川釣りゲーム開始画面
       GoRoute(
         path: RouteNames.fishingInIshikawaStart,
         builder: (context, state) => const FishingInIshikawaStartScreen(),
       ),
-      // ゲーム2画面
+      // 石川釣りゲーム画面
       GoRoute(
         path: RouteNames.fishingInIshikawaGame,
         builder: (context, state) => const FishingInIshikawaGameScreen(),
