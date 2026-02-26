@@ -8,13 +8,39 @@ class GengeGamePainter extends CustomPainter {
   final ui.Image? backgroundImage;
   final ui.Image? gengeImage;
   final Offset screenSize;
+  // late final TextPainter textPainter;
+  late final TextPainter scorePainter;
+  late final TextPainter timePainter;
+  late final TextPainter highScorePainter;
+  late final Paint particlePaint;
+  late final Paint uiBgPaint;
+  late final Paint bannerPaint;
+  late final double gengeAspectRatio;
+  late final int gengeImageWidth;
+  late final int gengeImageHeight;
 
   GengeGamePainter({
     required this.gameState,
     required this.backgroundImage,
     required this.gengeImage,
     required this.screenSize,
-  });
+  }) {
+    // テキストペインター
+    scorePainter = TextPainter(textDirection: TextDirection.ltr);
+    timePainter = TextPainter(textDirection: TextDirection.ltr);
+    highScorePainter = TextPainter(textDirection: TextDirection.ltr);
+    // textPainter = TextPainter(textDirection: TextDirection.ltr);
+
+    particlePaint = Paint()..color = const Color.fromARGB(255, 180, 240, 255);
+    uiBgPaint = Paint()..color = const Color.fromARGB(100, 0, 0, 0);
+    bannerPaint = Paint()..color = const Color.fromARGB(180, 0, 0, 0);
+
+    if (gengeImage != null) {
+      gengeImageWidth = gengeImage!.width;
+      gengeImageHeight = gengeImage!.height;
+      gengeAspectRatio = gengeImageHeight / gengeImageWidth;
+    }
+  }
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -50,8 +76,8 @@ class GengeGamePainter extends CustomPainter {
     if (gengeImage == null) return;
 
     const baseWidth = 400.0;
-    final aspectRatio = gengeImage!.height / gengeImage!.width;
-    final baseHeight = baseWidth * aspectRatio;
+    // final aspectRatio = gengeImage!.height / gengeImage!.width;
+    final baseHeight = baseWidth * gengeAspectRatio;
 
     // 揺れ演出によるサイズ変更
     final shakeAmount = gameState.shakingFrames;
@@ -73,8 +99,8 @@ class GengeGamePainter extends CustomPainter {
       Rect.fromLTWH(
         0,
         0,
-        gengeImage!.width.toDouble(),
-        gengeImage!.height.toDouble(),
+        gengeImageWidth.toDouble(),
+        gengeImageHeight.toDouble(),
       ),
       rect,
       Paint(),
@@ -83,14 +109,14 @@ class GengeGamePainter extends CustomPainter {
 
   /// パーティクルを描画
   void _drawParticles(Canvas canvas) {
-    final paint = Paint()..color = const Color.fromARGB(255, 180, 240, 255);
+    // final paint = Paint()..color = const Color.fromARGB(255, 180, 240, 255);
 
     for (final particle in gameState.particles) {
       final radius = (particle.lifespan / 3).clamp(0, 10).toDouble();
       canvas.drawCircle(
         Offset(particle.x, particle.y),
         radius,
-        paint,
+        particlePaint,
       );
     }
   }
@@ -98,18 +124,17 @@ class GengeGamePainter extends CustomPainter {
   /// UI を描画
   void _drawUI(Canvas canvas, Size size) {
     // 半透明の背景
-    final uiBgPaint = Paint()
-      ..color = const Color.fromARGB(100, 0, 0, 0);
+    // final uiBgPaint = Paint()..color = const Color.fromARGB(100, 0, 0, 0);
     canvas.drawRect(
       Rect.fromLTWH(10, 10, size.width - 20, 100),
       uiBgPaint,
     );
 
-    // テキストペインター
-    final textPainter = TextPainter(textDirection: TextDirection.ltr);
+    // // テキストペインター
+    // final textPainter = TextPainter(textDirection: TextDirection.ltr);
 
     // スコア表示
-    textPainter.text = TextSpan(
+    scorePainter.text = TextSpan(
       text: 'ぷるぷる度: ${gameState.score}',
       style: const TextStyle(
         color: Colors.white,
@@ -117,11 +142,11 @@ class GengeGamePainter extends CustomPainter {
         fontFamily: 'Meiryo',
       ),
     );
-    textPainter.layout();
-    textPainter.paint(canvas, const Offset(20, 20));
+    scorePainter.layout();
+    scorePainter.paint(canvas, const Offset(20, 20));
 
     // 残り時間表示
-    textPainter.text = TextSpan(
+    timePainter.text = TextSpan(
       text: '残り時間: ${gameState.timeLeft}',
       style: const TextStyle(
         color: Color.fromARGB(255, 255, 200, 0),
@@ -129,11 +154,11 @@ class GengeGamePainter extends CustomPainter {
         fontFamily: 'Meiryo',
       ),
     );
-    textPainter.layout();
-    textPainter.paint(canvas, const Offset(20, 60));
+    timePainter.layout();
+    timePainter.paint(canvas, const Offset(20, 60));
 
     // ハイスコア表示（右寄せ）
-    textPainter.text = TextSpan(
+    highScorePainter.text = TextSpan(
       text: '最高記録: ${gameState.highScore}',
       style: const TextStyle(
         color: Color.fromARGB(255, 200, 255, 200),
@@ -142,17 +167,17 @@ class GengeGamePainter extends CustomPainter {
         fontWeight: FontWeight.bold,
       ),
     );
-    textPainter.layout();
-    textPainter.paint(
+    highScorePainter.layout();
+    highScorePainter.paint(
       canvas,
-      Offset(size.width - textPainter.width - 30, 25),
+      Offset(size.width - highScorePainter.width - 30, 25),
     );
   }
 
   /// ゲームオーバーバナーと結果を描画
   void _drawGameOverBanner(Canvas canvas, Size size) {
     // 黒半透明バナー
-    final bannerPaint = Paint()..color = const Color.fromARGB(180, 0, 0, 0);
+    // final bannerPaint = Paint()..color = const Color.fromARGB(180, 0, 0, 0);
     const double bannerHeight = 170.0;
     canvas.drawRect(
       Rect.fromLTWH(0, size.height / 2 + 125, size.width, bannerHeight),
@@ -246,7 +271,7 @@ class GengeGamePainter extends CustomPainter {
   /// ゲンゲの矩形（判定用）を取得
   Rect getGengeRect(Size size) {
     if (gengeImage == null) return Rect.zero;
-    
+
     const baseWidth = 400.0;
     final aspectRatio = gengeImage!.height / gengeImage!.width;
     final baseHeight = baseWidth * aspectRatio;
@@ -275,9 +300,10 @@ class GengeGamePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(GengeGamePainter oldDelegate) {
-    return gameState != oldDelegate.gameState ||
-        backgroundImage != oldDelegate.backgroundImage ||
-        gengeImage != oldDelegate.gengeImage;
-  }
+  bool shouldRepaint(GengeGamePainter oldDelegate) => true;
+  // {
+  //   return gameState != oldDelegate.gameState ||
+  //       backgroundImage != oldDelegate.backgroundImage ||
+  //       gengeImage != oldDelegate.gengeImage;
+  // }
 }

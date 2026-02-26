@@ -20,7 +20,7 @@ class _GengeGameScreenState extends ConsumerState<GengeGameScreen> with TickerPr
   ui.Image? _gengeImage;
   bool _imagesLoaded = false;
   bool _gameStarted = false;
-  late Timer _paintUpdateTimer;
+  // late Timer _paintUpdateTimer;
 
   @override
   void initState() {
@@ -31,12 +31,16 @@ class _GengeGameScreenState extends ConsumerState<GengeGameScreen> with TickerPr
     notifier.resetGame();
 
     _animationController = AnimationController(
-      duration: const Duration(milliseconds: 100),
       vsync: this,
-    )..repeat();
+      duration: const Duration(milliseconds: 16), // 約60FPS
+    )..addListener(() {
+        ref.read(gengeGameProvider.notifier).updateParticles();
+        setState(() {});
+      })
+      ..repeat();
 
     _loadImages();
-    _startPaintUpdateTimer();
+    // _startPaintUpdateTimer();
   }
 
   /// 画像を非同期で読み込む
@@ -66,16 +70,16 @@ class _GengeGameScreenState extends ConsumerState<GengeGameScreen> with TickerPr
   }
 
   /// ペイント更新タイマーを開始
-  void _startPaintUpdateTimer() {
-    _paintUpdateTimer = Timer.periodic(const Duration(milliseconds: 100), (_) {
-      // the widget may be disposed by the time the timer fires
-      if (!mounted) return;
-      final notifier = ref.read(gengeGameProvider.notifier);
-      notifier.updateParticles();
-      // safe to call setState since mounted is true
-      setState(() {});
-    });
-  }
+  // void _startPaintUpdateTimer() {
+  //   _paintUpdateTimer = Timer.periodic(const Duration(milliseconds: 100), (_) {
+  //     // the widget may be disposed by the time the timer fires
+  //     if (!mounted) return;
+  //     final notifier = ref.read(gengeGameProvider.notifier);
+  //     notifier.updateParticles();
+  //     // safe to call setState since mounted is true
+  //     setState(() {});
+  //   });
+  // }
 
   /// ゲーム開始
   void _startGame() {
@@ -149,7 +153,7 @@ class _GengeGameScreenState extends ConsumerState<GengeGameScreen> with TickerPr
     notifier.resetGame();
 
     _animationController.dispose();
-    _paintUpdateTimer.cancel();
+    // _paintUpdateTimer.cancel();
     super.dispose();
   }
 
