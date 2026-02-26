@@ -24,11 +24,23 @@ class GengeStartScreen extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // ゲームアイコン
-                  Text(
-                    '🦀',
-                    style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                      fontSize: 80,
+                  // ゲームアイコン（アセット化されたアイコンを表示、なければ絵文字でフォールバック）
+                  SizedBox(
+                    width: 200,
+                    height: 200,
+                    child: Image.asset(
+                      'assets/images/genge/genge_icon.png',
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Center(
+                          child: Text(
+                            '🐟️',
+                            style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                              fontSize: 80,
+                            ),
+                          ),
+                        );
+                      },
                     ),
                   ),
                   const SizedBox(height: AppConstants.largePadding),

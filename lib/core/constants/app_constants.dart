@@ -18,7 +18,7 @@ class AppConstants {
       id: 'genge',
       title: 'ぷるぷるゲンゲ',
       description: 'ゲンゲを連打してスコアを稼ごう！',
-      icon: '🦑',
+      icon: '🐟️',
     ),
     GameInfo(
       id: 'game2',
