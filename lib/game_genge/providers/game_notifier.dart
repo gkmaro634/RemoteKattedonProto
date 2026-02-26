@@ -10,6 +10,7 @@ class GengeGameEngine {
   GengeGameState state;
   final int gameLimit;
   DateTime? startTime;
+  bool _running = false;
 
   GengeGameEngine({
     required this.state,
@@ -18,28 +19,32 @@ class GengeGameEngine {
 
   void start() {
     startTime = DateTime.now();
+    _running = true;
   }
 
-  void reset(GengeGameState newState) {
+  void reset(GengeGameState newState, {bool autoStart = true}) {
     state = newState;
     startTime = null;
+    _running = autoStart;
+    if (autoStart) {
+      start();
+    }
   }
 
   void update() {
-    if (startTime == null) return;
+    if (!_running || startTime == null) return;
     if (state.isGameOver) return;
 
     final elapsed = DateTime.now().difference(startTime!).inSeconds;
     final timeLeft = max(0, gameLimit - elapsed);
 
     // particle update
-    final updatedParticles = [...state.particles];
-    for (var p in updatedParticles) {
-      p.update();
-    }
-
-    final alive = updatedParticles.where((p) => p.isAlive).toList();
-
+    // final updatedParticles = [...state.particles];
+    // for (var p in updatedParticles) {
+    //   p.update();
+    // }
+    final updated = [...state.particles]..forEach((p) => p.update());
+    final alive = updated.where((p) => p.isAlive).toList();
     final newShaking = max(0, state.shakingFrames - 1);
 
     state = state.copyWith(
@@ -51,6 +56,8 @@ class GengeGameEngine {
   }
 
   void tap(Offset pos) {
+    if (!_running || state.isGameOver) return;
+
     final particles = [...state.particles];
     final random = Random();
 
@@ -124,6 +131,7 @@ class GengeGameNotifier extends AutoDisposeAsyncNotifier<GengeGameState> {
 
     _engine!.start();
     _handleGameOver = false;
+    state = AsyncValue.data(_engine!.state);
   }
 
   /// ゲーム終了処理
@@ -180,14 +188,16 @@ class GengeGameNotifier extends AutoDisposeAsyncNotifier<GengeGameState> {
 
   /// ゲームをリセットする
   void resetGame() async {
-    final highScore = await HighscoreService.loadHighscore();
+    if (_engine == null) return;
 
+    final highScore = await HighscoreService.loadHighscore();
     final initial = GengeGameState.initial(highScore);
 
-    _engine?.reset(initial);
+    _engine?.reset(initial, autoStart: true);
 
-    state = AsyncValue.data(initial);
     _handleGameOver = false;
+    state = AsyncValue.data(_engine!.state);
+    // state = AsyncValue.data(initial);
   }
 }
 
