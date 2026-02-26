@@ -20,10 +20,10 @@ class GengeGameNotifier extends AsyncNotifier<GengeGameState> {
 
   // audio player and asset paths
   final AudioPlayer _audioPlayer = AudioPlayer();
-  static const String _soundTap = 'assets/audio/genge/pochi.mp3';
-  static const String _soundMaster = 'assets/audio/genge/hakushu.mp3';
-  static const String _soundNormal = 'assets/audio/genge/koto.mp3';
-  static const String _soundZero = 'assets/audio/genge/gaan.mp3';
+  static const String _soundTap = 'audio/genge/pochi.mp3';
+  static const String _soundMaster = 'audio/genge/hakushu.mp3';
+  static const String _soundNormal = 'audio/genge/koto.mp3';
+  static const String _soundZero = 'audio/genge/gaan.mp3';
 
 
   @override
