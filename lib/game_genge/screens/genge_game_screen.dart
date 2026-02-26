@@ -14,13 +14,13 @@ class GengeGameScreen extends ConsumerStatefulWidget {
   ConsumerState<GengeGameScreen> createState() => _GengeGameScreenState();
 }
 
-class _GengeGameScreenState extends ConsumerState<GengeGameScreen> with TickerProviderStateMixin {
+class _GengeGameScreenState extends ConsumerState<GengeGameScreen>
+    with TickerProviderStateMixin {
   late AnimationController _animationController;
   ui.Image? _backgroundImage;
   ui.Image? _gengeImage;
   bool _imagesLoaded = false;
   bool _gameStarted = false;
-  
 
   @override
   void initState() {
@@ -37,9 +37,12 @@ class _GengeGameScreenState extends ConsumerState<GengeGameScreen> with TickerPr
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 16), // 約60FPS
-    )..addListener(() {
-        ref.read(gengeGameProvider.notifier).updateParticles();
-        setState(() {});
+    )
+      ..addListener(() {
+        if (!mounted) return;
+
+        ref.read(gengeGameProvider.notifier).updateFrame();
+        // setState(() {});
       })
       ..repeat();
 
@@ -72,8 +75,6 @@ class _GengeGameScreenState extends ConsumerState<GengeGameScreen> with TickerPr
     final frame = await codec.getNextFrame();
     return frame.image;
   }
-
-  
 
   /// ゲーム開始
   void _startGame() {
@@ -147,7 +148,7 @@ class _GengeGameScreenState extends ConsumerState<GengeGameScreen> with TickerPr
     notifier.resetGame();
 
     _animationController.dispose();
-    
+
     super.dispose();
   }
 

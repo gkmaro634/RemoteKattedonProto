@@ -6,6 +6,76 @@ import 'package:audioplayers/audioplayers.dart';
 import 'dart:math';
 import 'dart:async';
 
+class GengeGameEngine {
+  GengeGameState state;
+  final int gameLimit;
+  DateTime? startTime;
+
+  GengeGameEngine({
+    required this.state,
+    required this.gameLimit,
+  });
+
+  void start() {
+    startTime = DateTime.now();
+  }
+
+  void update() {
+    if (startTime == null) return;
+    if (state.isGameOver) return;
+
+    final elapsed = DateTime.now().difference(startTime!).inSeconds;
+    final timeLeft = max(0, gameLimit - elapsed);
+
+    // particle update
+    final updatedParticles = [...state.particles];
+    for (var p in updatedParticles) {
+      p.update();
+    }
+
+    final alive = updatedParticles.where((p) => p.isAlive).toList();
+
+    final newShaking = max(0, state.shakingFrames - 1);
+
+    state = state.copyWith(
+      timeLeft: timeLeft,
+      particles: alive,
+      shakingFrames: newShaking,
+      isGameOver: timeLeft == 0,
+    );
+  }
+
+  void tap(Offset pos) {
+    final particles = [...state.particles];
+    final random = Random();
+
+    for (int i = 0; i < 6; i++) {
+      final angle = (i / 6) * 2 * pi;
+      final speed = random.nextDouble() * 4 + 3;
+
+      particles.add(
+        ParticleData(
+          x: pos.dx,
+          y: pos.dy,
+          vx: cos(angle) * speed,
+          vy: sin(angle) * speed,
+          lifespan: 25,
+        ),
+      );
+    }
+
+    if (particles.length > 60) {
+      particles.removeRange(0, particles.length - 60);
+    }
+
+    state = state.copyWith(
+      score: state.score + 1,
+      shakingFrames: 15,
+      particles: particles,
+    );
+  }
+}
+
 /// ハイスコアを取得するプロバイダ
 final highscoreProvider = FutureProvider<int>((ref) async {
   return await HighscoreService.loadHighscore();
@@ -13,9 +83,8 @@ final highscoreProvider = FutureProvider<int>((ref) async {
 
 /// ゲーム状態を管理するNotifier
 
-class GengeGameNotifier extends AsyncNotifier<GengeGameState> {
-  Timer? _gameTimer;
-  late DateTime _gameStartTime;
+class GengeGameNotifier extends AutoDisposeAsyncNotifier<GengeGameState> {
+  GengeGameEngine? _engine;
   static const int _gameLimit = 15; // 秒
 
   // audio player and asset paths
@@ -25,46 +94,31 @@ class GengeGameNotifier extends AsyncNotifier<GengeGameState> {
   static const String _soundNormal = 'audio/genge/koto.mp3';
   static const String _soundZero = 'audio/genge/gaan.mp3';
 
-
   @override
   Future<GengeGameState> build() async {
+    print("GengeGameNotifier build");
+
     final highScore = await HighscoreService.loadHighscore();
-    return GengeGameState.initial(highScore);
+    final initial = GengeGameState.initial(highScore);
+    _engine = GengeGameEngine(state: initial, gameLimit: _gameLimit);
+
+    ref.onDispose(() {
+      _audioPlayer.dispose();
+      print("GengeGameNotifier disposed");
+    });
+
+    return initial;
   }
 
   /// ゲームを開始する
   void startGame() {
-    _gameStartTime = DateTime.now();
-    // cancel any existing timer before starting a new one
-    _gameTimer?.cancel();
-    _gameTimer = Timer.periodic(const Duration(milliseconds: 100), (_) {
-      _updateGameTime();
-    });
-  }
+    if (_engine == null) return;
 
-  /// ゲーム時間を更新する
-  void _updateGameTime() {
-    final elapsed = DateTime.now().difference(_gameStartTime).inSeconds;
-    final timeLeft = max(0, _gameLimit - elapsed);
-
-    state.whenData((gameState) {
-      if (gameState.timeLeft != timeLeft) {
-        final newState = gameState.copyWith(timeLeft: timeLeft);
-
-        // ゲーム終了判定
-        if (timeLeft == 0 && !gameState.isGameOver) {
-          _onGameOver(newState);
-        } else {
-          state = AsyncValue.data(newState);
-        }
-      }
-    });
+    _engine!.start();
   }
 
   /// ゲーム終了処理
   Future<void> _onGameOver(GengeGameState currentState) async {
-    _gameTimer?.cancel();
-
     // ハイスコア更新チェック
     int newHighScore = currentState.highScore;
     if (currentState.score > currentState.highScore) {
@@ -73,100 +127,61 @@ class GengeGameNotifier extends AsyncNotifier<GengeGameState> {
     }
 
     // 結果音声を再生
-    try {
-      if (currentState.score >= 100) {
-        await _audioPlayer.play(AssetSource(_soundMaster));
-      } else if (currentState.score > 0) {
-        await _audioPlayer.play(AssetSource(_soundNormal));
-      } else {
-        await _audioPlayer.play(AssetSource(_soundZero));
-      }
-    } catch (_) {}
+    _playEndSound(currentState.score);
 
-    final finalState = currentState.copyWith(
+    state = AsyncValue.data(currentState.copyWith(
       isGameOver: true,
       highScore: newHighScore,
-    );
-    state = AsyncValue.data(finalState);
+    ));
+  }
+
+  void _playEndSound(int score) {
+    String sound =
+        score >= 100 ? _soundMaster : (score > 0 ? _soundNormal : _soundZero);
+    _audioPlayer.play(AssetSource(sound)).catchError((_) {});
   }
 
   /// ゲンゲをタップしたときの処理
   void onGengePressed(Offset tapPosition) async {
-    final gameState = state.value;
-    if (gameState == null || gameState.isGameOver || gameState.timeLeft <= 0) {
-      return;
-    }
+    if (_engine == null) return;
 
     // タップ音
-    try {
-      await _audioPlayer.play(AssetSource(_soundTap));
-    } catch (_) {}
+    _audioPlayer.stop().then((_) => _audioPlayer.play(AssetSource(_soundTap)));
 
-    // スコア加算
-    final newScore = gameState.score + 1;
+    _engine!.tap(tapPosition);
 
-    // パーティクル生成（6個）
-    final particles = [...gameState.particles];
-    final random = Random();
-    for (int i = 0; i < 6; i++) {
-      final angle = (i / 6) * 2 * pi;
-      final speed = random.nextDouble() * 4 + 3;
-      particles.add(
-        ParticleData(
-          x: tapPosition.dx,
-          y: tapPosition.dy,
-          vx: cos(angle) * speed,
-          vy: sin(angle) * speed,
-          lifespan: 25,
-        ),
-      );
+    state = AsyncValue.data(_engine!.state);
+  }
+
+  /// パーティクルと揺れを更新する
+  void updateFrame() {
+    if (_engine == null) return;
+
+    _engine!.update();
+    final newState = _engine!.state;
+
+    if (newState.isGameOver) {
+      _onGameOver(newState);
+      return;
     }
-    if (particles.length > 60) {
-      particles.removeRange(0, particles.length - 60);
-    }
-
-    final newState = gameState.copyWith(
-      score: newScore,
-      shakingFrames: 15,
-      particles: particles,
-    );
 
     state = AsyncValue.data(newState);
   }
 
-  /// パーティクルと揺れを更新する
-  void updateParticles() {
-    state.whenData((gameState) {
-      if (gameState.isGameOver) return;
-
-      // パーティクル更新
-      final updatedParticles = [...gameState.particles];
-      for (var particle in updatedParticles) {
-        particle.update();
-      }
-      final aliveParticles = updatedParticles.where((p) => p.isAlive).toList();
-
-      // 揺れ更新
-      final newShaking = max(0, gameState.shakingFrames - 1);
-
-      final newState = gameState.copyWith(
-        shakingFrames: newShaking,
-        particles: aliveParticles,
-      );
-
-      state = AsyncValue.data(newState);
-    });
-  }
-
   /// ゲームをリセットする
   void resetGame() async {
-    _gameTimer?.cancel();
     final highScore = await HighscoreService.loadHighscore();
-    state = AsyncValue.data(GengeGameState.initial(highScore));
+
+    final initial = GengeGameState.initial(highScore);
+
+    _engine = GengeGameEngine(state: initial, gameLimit: _gameLimit);
+
+    state = AsyncValue.data(initial);
   }
 }
 
 /// ゲーム状態プロバイダ
-final gengeGameProvider = AsyncNotifierProvider<GengeGameNotifier, GengeGameState>(
+final gengeGameProvider =
+    AsyncNotifierProvider.autoDispose<GengeGameNotifier, GengeGameState>(
   () => GengeGameNotifier(),
 );
