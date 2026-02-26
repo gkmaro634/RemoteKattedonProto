@@ -25,6 +25,11 @@ class _GengeGameScreenState extends ConsumerState<GengeGameScreen> with TickerPr
   @override
   void initState() {
     super.initState();
+
+    // リセットしてから開始
+    final notifier = ref.read(gengeGameProvider.notifier);
+    notifier.resetGame();
+
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 100),
       vsync: this,
@@ -63,11 +68,12 @@ class _GengeGameScreenState extends ConsumerState<GengeGameScreen> with TickerPr
   /// ペイント更新タイマーを開始
   void _startPaintUpdateTimer() {
     _paintUpdateTimer = Timer.periodic(const Duration(milliseconds: 100), (_) {
+      // the widget may be disposed by the time the timer fires
+      if (!mounted) return;
       final notifier = ref.read(gengeGameProvider.notifier);
       notifier.updateParticles();
-      if (mounted) {
-        setState(() {});
-      }
+      // safe to call setState since mounted is true
+      setState(() {});
     });
   }
 
@@ -138,6 +144,10 @@ class _GengeGameScreenState extends ConsumerState<GengeGameScreen> with TickerPr
 
   @override
   void dispose() {
+    // 画面を離れるときにタイマーを止めておく
+    final notifier = ref.read(gengeGameProvider.notifier);
+    notifier.resetGame();
+
     _animationController.dispose();
     _paintUpdateTimer.cancel();
     super.dispose();
