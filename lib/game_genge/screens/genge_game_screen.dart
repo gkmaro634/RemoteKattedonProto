@@ -30,6 +30,10 @@ class _GengeGameScreenState extends ConsumerState<GengeGameScreen> with TickerPr
     final notifier = ref.read(gengeGameProvider.notifier);
     notifier.resetGame();
 
+    // 遷移してきたら即座にゲームを開始する
+    notifier.startGame();
+    _gameStarted = true;
+
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 16), // 約60FPS
@@ -169,6 +173,7 @@ class _GengeGameScreenState extends ConsumerState<GengeGameScreen> with TickerPr
             }
 
             if (!_gameStarted) {
+              // TODO: このゲーム開始待ち受け状態は不要。遷移するなりゲームスタートで構わない
               return Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
