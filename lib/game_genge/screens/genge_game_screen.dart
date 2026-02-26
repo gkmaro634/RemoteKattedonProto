@@ -20,7 +20,6 @@ class _GengeGameScreenState extends ConsumerState<GengeGameScreen>
   ui.Image? _backgroundImage;
   ui.Image? _gengeImage;
   bool _imagesLoaded = false;
-  bool _gameStarted = false;
 
   @override
   void initState() {
@@ -30,10 +29,6 @@ class _GengeGameScreenState extends ConsumerState<GengeGameScreen>
     final notifier = ref.read(gengeGameProvider.notifier);
     notifier.resetGame();
 
-    // 遷移してきたら即座にゲームを開始する
-    notifier.startGame();
-    _gameStarted = true;
-
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 16), // 約60FPS
@@ -42,12 +37,10 @@ class _GengeGameScreenState extends ConsumerState<GengeGameScreen>
         if (!mounted) return;
 
         ref.read(gengeGameProvider.notifier).updateFrame();
-        // setState(() {});
       })
       ..repeat();
 
     _loadImages();
-    // _startPaintUpdateTimer();
   }
 
   /// 画像を非同期で読み込む
@@ -81,7 +74,7 @@ class _GengeGameScreenState extends ConsumerState<GengeGameScreen>
     final notifier = ref.read(gengeGameProvider.notifier);
     notifier.startGame();
     setState(() {
-      _gameStarted = true;
+      // _gameStarted = true;
     });
   }
 
@@ -133,7 +126,7 @@ class _GengeGameScreenState extends ConsumerState<GengeGameScreen>
         if (retryButtonRect.contains(position)) {
           ref.read(gengeGameProvider.notifier).resetGame();
           setState(() {
-            _gameStarted = false;
+            // _gameStarted = false;
           });
           _startGame();
         }
@@ -143,10 +136,6 @@ class _GengeGameScreenState extends ConsumerState<GengeGameScreen>
 
   @override
   void dispose() {
-    // 画面を離れるときにタイマーを止めておく
-    final notifier = ref.read(gengeGameProvider.notifier);
-    notifier.resetGame();
-
     _animationController.dispose();
 
     super.dispose();
@@ -170,33 +159,6 @@ class _GengeGameScreenState extends ConsumerState<GengeGameScreen>
             if (!_imagesLoaded) {
               return const Center(
                 child: CircularProgressIndicator(),
-              );
-            }
-
-            if (!_gameStarted) {
-              // TODO: このゲーム開始待ち受け状態は不要。遷移するなりゲームスタートで構わない
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text(
-                      'ぷるぷるゲンゲをタップしてスコアを稼ごう！',
-                      style: TextStyle(fontSize: 18),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      '15秒間のタイムアタック',
-                      style: TextStyle(fontSize: 16, color: Colors.grey),
-                    ),
-                    const SizedBox(height: 32),
-                    FilledButton.tonalIcon(
-                      onPressed: _startGame,
-                      icon: const Icon(Icons.play_arrow),
-                      label: const Text('ゲーム開始'),
-                    ),
-                  ],
-                ),
               );
             }
 

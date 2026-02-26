@@ -107,6 +107,8 @@ class GengeGameNotifier extends AutoDisposeAsyncNotifier<GengeGameState> {
       print("GengeGameNotifier disposed");
     });
 
+    Future.microtask(startGame);
+
     return initial;
   }
 
