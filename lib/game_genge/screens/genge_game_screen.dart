@@ -20,7 +20,7 @@ class _GengeGameScreenState extends ConsumerState<GengeGameScreen> with TickerPr
   ui.Image? _gengeImage;
   bool _imagesLoaded = false;
   bool _gameStarted = false;
-  // late Timer _paintUpdateTimer;
+  
 
   @override
   void initState() {
@@ -69,17 +69,7 @@ class _GengeGameScreenState extends ConsumerState<GengeGameScreen> with TickerPr
     return frame.image;
   }
 
-  /// ペイント更新タイマーを開始
-  // void _startPaintUpdateTimer() {
-  //   _paintUpdateTimer = Timer.periodic(const Duration(milliseconds: 100), (_) {
-  //     // the widget may be disposed by the time the timer fires
-  //     if (!mounted) return;
-  //     final notifier = ref.read(gengeGameProvider.notifier);
-  //     notifier.updateParticles();
-  //     // safe to call setState since mounted is true
-  //     setState(() {});
-  //   });
-  // }
+  
 
   /// ゲーム開始
   void _startGame() {
@@ -153,7 +143,7 @@ class _GengeGameScreenState extends ConsumerState<GengeGameScreen> with TickerPr
     notifier.resetGame();
 
     _animationController.dispose();
-    // _paintUpdateTimer.cancel();
+    
     super.dispose();
   }
 
