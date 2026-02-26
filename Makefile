@@ -13,7 +13,12 @@ deploy:
 	firebase deploy
 
 # Build + Deploy
-release: build deploy
+release:
+	flutter clean
+	flutter pub get
+	flutter build web --release
+	firebase deploy
+# build deploy
 
 # Clean build cache
 clean:
