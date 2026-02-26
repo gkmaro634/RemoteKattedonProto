@@ -15,6 +15,12 @@ class AppConstants {
       icon: '🦀',
     ),
     GameInfo(
+      id: 'genge',
+      title: 'ぷるぷるゲンゲ',
+      description: 'ゲンゲを連打してスコアを稼ごう！',
+      icon: '🐟️',
+    ),
+    GameInfo(
       id: 'game2',
       title: 'ゲーム2',
       description: 'プレースホルダー：ゲーム2の説明',
