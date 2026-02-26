@@ -20,6 +20,11 @@ class GengeGameEngine {
     startTime = DateTime.now();
   }
 
+  void reset(GengeGameState newState) {
+    state = newState;
+    startTime = null;
+  }
+
   void update() {
     if (startTime == null) return;
     if (state.isGameOver) return;
@@ -86,6 +91,7 @@ final highscoreProvider = FutureProvider<int>((ref) async {
 class GengeGameNotifier extends AutoDisposeAsyncNotifier<GengeGameState> {
   GengeGameEngine? _engine;
   static const int _gameLimit = 15; // 秒
+  bool _handleGameOver = false;
 
   // audio player and asset paths
   final AudioPlayer _audioPlayer = AudioPlayer();
@@ -117,6 +123,7 @@ class GengeGameNotifier extends AutoDisposeAsyncNotifier<GengeGameState> {
     if (_engine == null) return;
 
     _engine!.start();
+    _handleGameOver = false;
   }
 
   /// ゲーム終了処理
@@ -162,7 +169,8 @@ class GengeGameNotifier extends AutoDisposeAsyncNotifier<GengeGameState> {
     _engine!.update();
     final newState = _engine!.state;
 
-    if (newState.isGameOver) {
+    if (newState.isGameOver && !_handleGameOver) {
+      _handleGameOver = true;
       _onGameOver(newState);
       return;
     }
@@ -176,9 +184,10 @@ class GengeGameNotifier extends AutoDisposeAsyncNotifier<GengeGameState> {
 
     final initial = GengeGameState.initial(highScore);
 
-    _engine = GengeGameEngine(state: initial, gameLimit: _gameLimit);
+    _engine?.reset(initial);
 
     state = AsyncValue.data(initial);
+    _handleGameOver = false;
   }
 }
 
