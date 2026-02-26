@@ -25,10 +25,19 @@ class DeshellingCrabStartScreen extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   // ゲームアイコン
-                  Text(
-                    '🦀',
-                    style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                      fontSize: 80,
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: Image.asset(
+                      'assets/images/deshelling_crab/top.png',
+                      height: 400,
+                      width: 400,
+                      fit: BoxFit.contain,
+                      errorBuilder: (_, __, ___) => Text(
+                        '🦀',
+                        style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                          fontSize: 80,
+                        ),
+                      ),
                     ),
                   ),
                   const SizedBox(height: AppConstants.largePadding),

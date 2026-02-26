@@ -209,13 +209,21 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                             child: ClipRRect(
                               key: ValueKey(resultUi?.imagePath ?? _imageForStep(step)),
                               borderRadius: BorderRadius.circular(16),
-                              child: Image.asset(
-                                resultUi?.imagePath ?? _imageForStep(step),
-                                fit: BoxFit.contain,
-                                errorBuilder: (_, __, ___) => const Icon(
-                                  Icons.image_not_supported,
-                                  size: 80,
-                                ),
+                              child: Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  // 黒い背景（透過PNG用）
+                                  Container(color: Colors.black),
+                                  // 蟹の画像
+                                  Image.asset(
+                                    resultUi?.imagePath ?? _imageForStep(step),
+                                    fit: BoxFit.contain,
+                                    errorBuilder: (_, __, ___) => const Icon(
+                                      Icons.image_not_supported,
+                                      size: 80,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ),
