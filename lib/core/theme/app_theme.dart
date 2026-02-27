@@ -17,12 +17,9 @@ class AppTheme {
   // ゲーム別カラー
   static const Color katteedomColor = Color(0xFFE8471C);
   static const Color deshellingCrabColor = Color(0xFFD32F2F);
-<<<<<<< HEAD
   static const Color fishingInIshikawaColor = Color(0xFF2196F3);
-=======
   static const Color gengeColor = Color(0xFF6A4C93);
   static const Color game2Color = Color(0xFF2196F3);
->>>>>>> origin/main
 
   static ThemeData get lightTheme {
     return ThemeData(

@@ -15,12 +15,9 @@ class GameSelectionScreen extends StatefulWidget {
 class _GameSelectionScreenState extends State<GameSelectionScreen> {
   late final Map<String, String> _gameRoutes = {
     'deshellingCrab': RouteNames.deshellingCrabStart,
-<<<<<<< HEAD
     'fishingInIshikawa': RouteNames.fishingInIshikawaStart,
-=======
     'genge': RouteNames.gengeStart,
     'game2': RouteNames.game2Start,
->>>>>>> origin/main
   };
 
   void _navigateToGame(String gameId) {
@@ -99,12 +96,9 @@ class _GameSelectionScreenState extends State<GameSelectionScreen> {
                       final game = AppConstants.availableGames[index];
                       final gameColors = {
                         'deshellingCrab': AppTheme.deshellingCrabColor,
-<<<<<<< HEAD
                         'fishingInIshikawa': AppTheme.fishingInIshikawaColor,
-=======
                         'genge': AppTheme.gengeColor,
                         'game2': AppTheme.game2Color,
->>>>>>> origin/main
                       };
 
                       return GameCard(
