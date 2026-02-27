@@ -1,6 +1,6 @@
-/// ゲーム2のモデル定義（実装用プレースホルダー）
+// 石川釣りゲームのモデル定義（実装用プレースホルダー）
 
-class Game2GameState {
+class FishingInIshikawaGameState {
   // ゲーム状態管理用
   int score = 0;
   int combos = 0;

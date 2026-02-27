@@ -5,14 +5,14 @@ import 'package:remote_kattedon/core/constants/app_constants.dart';
 import 'package:remote_kattedon/widgets/common_widgets.dart';
 import 'package:remote_kattedon/navigation/route_names.dart';
 
-class Game2StartScreen extends StatelessWidget {
-  const Game2StartScreen({Key? key}) : super(key: key);
+class FishingInIshikawaStartScreen extends StatelessWidget {
+  const FishingInIshikawaStartScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('ゲーム2'),
+        title: const Text('石川釣りゲーム'),
         elevation: 0,
       ),
       body: SafeArea(
@@ -26,7 +26,7 @@ class Game2StartScreen extends StatelessWidget {
                 children: [
                   // ゲームアイコン
                   Text(
-                    '🎯',
+                    '🎣',
                     style: Theme.of(context).textTheme.displayLarge?.copyWith(
                       fontSize: 80,
                     ),
@@ -35,11 +35,9 @@ class Game2StartScreen extends StatelessWidget {
 
                   // ゲームタイトル
                   GameDescriptionCard(
-                    title: 'ゲーム2',
-                    description: 'このゲームのプレースホルダー説明です。\n\n'
-                        '実装時に適切なゲーム説明に置き換えてください。\n\n'
-                        '複数のゲームを並行開発できるように設計されています。',
-                    accentColor: AppTheme.game2Color,
+                    title: '石川釣りゲーム',
+                    description: '石川県の色んな漁場を巡りながら、釣りを楽しむゲームです。\n\n',
+                    accentColor: AppTheme.fishingInIshikawaColor,
                   ),
                   const SizedBox(height: AppConstants.largePadding * 1.5),
 
@@ -47,10 +45,7 @@ class Game2StartScreen extends StatelessWidget {
                   GameStartButton(
                     label: 'START',
                     onPressed: () {
-                      // TODO: 実装時にゲーム画面に遷移
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('ゲーム画面に遷移します')),
-                      );
+                      context.go(RouteNames.fishingInIshikawaGame);
                     },
                   ),
                   const SizedBox(height: AppConstants.defaultPadding),
