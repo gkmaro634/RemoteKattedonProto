@@ -15,10 +15,23 @@ class AppConstants {
       icon: '🦀',
     ),
     GameInfo(
+<<<<<<< HEAD
       id: 'fishingInIshikawa',
       title: '石川釣りゲーム',
       description: '石川県の色んな漁場を巡りながら、釣りを楽しむゲームです。\n\n',
       icon: '🎣',
+=======
+      id: 'genge',
+      title: 'ぷるぷるゲンゲ',
+      description: 'ゲンゲを連打してスコアを稼ごう！',
+      icon: '🐟️',
+    ),
+    GameInfo(
+      id: 'game2',
+      title: 'ゲーム2',
+      description: 'プレースホルダー：ゲーム2の説明',
+      icon: '🎯',
+>>>>>>> origin/main
     ),
   ];
 
