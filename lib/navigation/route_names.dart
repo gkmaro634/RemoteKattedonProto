@@ -7,14 +7,8 @@ class RouteNames {
   static const String deshellingCrabStart = '/deshellingCrab-start';
   static const String deshellingCrabGame = '/deshellingCrab-game';
 
-<<<<<<< HEAD
   static const String fishingInIshikawaStart = '/fishing-in-ishikawa-start';
   static const String fishingInIshikawaGame = '/fishing-in-ishikawa-game';
-=======
   static const String gengeStart = '/genge-start';
   static const String gengeGame = '/genge-game';
-
-  static const String game2Start = '/game2-start';
-  static const String game2Game = '/game2-game';
->>>>>>> origin/main
 }

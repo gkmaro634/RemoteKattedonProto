@@ -7,7 +7,6 @@ import 'package:remote_kattedon/fishing_in_ishikawa/screens/fishing_start_screen
 import 'package:remote_kattedon/fishing_in_ishikawa/screens/fishing_game_screen.dart';
 import 'package:remote_kattedon/game_genge/screens/genge_start_screen.dart';
 import 'package:remote_kattedon/game_genge/screens/genge_game_screen.dart';
-import 'package:remote_kattedon/game2/screens/game2_start_screen.dart';
 import 'route_names.dart';
 
 class AppRouter {
