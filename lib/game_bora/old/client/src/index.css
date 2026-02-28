@@ -1,0 +1,302 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* 
+ * ボラ待ちやぐらゲーム - デザインシステム
+ * テーマ: 昭和レトロ・木版画風（和風）
+ * カラー: 藍色の海・木材の茶色・朱色アクセント
+ */
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  
+  /* ゲーム専用カラー */
+  --color-sea-deep: oklch(0.25 0.08 240);
+  --color-sea-mid: oklch(0.45 0.12 220);
+  --color-sea-light: oklch(0.65 0.10 210);
+  --color-wood: oklch(0.55 0.08 60);
+  --color-wood-dark: oklch(0.35 0.06 50);
+  --color-vermillion: oklch(0.55 0.22 25);
+  --color-washi: oklch(0.96 0.02 80);
+  --color-sumi: oklch(0.15 0.01 250);
+}
+
+:root {
+  /* 藍色テーマ（能登の海） */
+  --primary: oklch(0.35 0.15 240);
+  --primary-foreground: oklch(0.97 0.01 80);
+  --radius: 0.4rem;
+  --background: oklch(0.12 0.04 240);
+  --foreground: oklch(0.95 0.02 80);
+  --card: oklch(0.18 0.05 240);
+  --card-foreground: oklch(0.95 0.02 80);
+  --popover: oklch(0.18 0.05 240);
+  --popover-foreground: oklch(0.95 0.02 80);
+  --secondary: oklch(0.25 0.06 240);
+  --secondary-foreground: oklch(0.85 0.02 80);
+  --muted: oklch(0.22 0.04 240);
+  --muted-foreground: oklch(0.65 0.04 240);
+  --accent: oklch(0.55 0.22 25);
+  --accent-foreground: oklch(0.97 0.01 80);
+  --destructive: oklch(0.55 0.22 25);
+  --destructive-foreground: oklch(0.97 0.01 80);
+  --border: oklch(0.30 0.06 240);
+  --input: oklch(0.25 0.05 240);
+  --ring: oklch(0.55 0.15 220);
+  --chart-1: oklch(0.55 0.15 220);
+  --chart-2: oklch(0.65 0.12 160);
+  --chart-3: oklch(0.55 0.22 25);
+  --chart-4: oklch(0.55 0.08 60);
+  --chart-5: oklch(0.75 0.10 80);
+  --sidebar: oklch(0.15 0.04 240);
+  --sidebar-foreground: oklch(0.95 0.02 80);
+  --sidebar-primary: oklch(0.35 0.15 240);
+  --sidebar-primary-foreground: oklch(0.97 0.01 80);
+  --sidebar-accent: oklch(0.22 0.05 240);
+  --sidebar-accent-foreground: oklch(0.95 0.02 80);
+  --sidebar-border: oklch(0.28 0.06 240);
+  --sidebar-ring: oklch(0.55 0.15 220);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Noto Sans JP', sans-serif;
+  }
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  [type="button"]:not(:disabled),
+  [type="submit"]:not(:disabled),
+  [type="reset"]:not(:disabled),
+  a[href],
+  select:not(:disabled),
+  input[type="checkbox"]:not(:disabled),
+  input[type="radio"]:not(:disabled) {
+    @apply cursor-pointer;
+  }
+}
+
+@layer components {
+  .container {
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .flex {
+    min-height: 0;
+    min-width: 0;
+  }
+
+  @media (min-width: 640px) {
+    .container {
+      padding-left: 1.5rem;
+      padding-right: 1.5rem;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .container {
+      padding-left: 2rem;
+      padding-right: 2rem;
+      max-width: 1280px;
+    }
+  }
+  
+  /* 和風ボタンスタイル */
+  .btn-washi {
+    background: oklch(0.55 0.22 25);
+    color: oklch(0.97 0.01 80);
+    border: 2px solid oklch(0.45 0.18 25);
+    font-family: 'Noto Serif JP', serif;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    box-shadow: 3px 3px 0 oklch(0.30 0.12 25), inset 0 1px 0 rgba(255,255,255,0.2);
+    transition: all 0.1s ease;
+  }
+  .btn-washi:hover {
+    transform: translate(-1px, -1px);
+    box-shadow: 4px 4px 0 oklch(0.30 0.12 25), inset 0 1px 0 rgba(255,255,255,0.2);
+  }
+  .btn-washi:active {
+    transform: translate(2px, 2px);
+    box-shadow: 1px 1px 0 oklch(0.30 0.12 25);
+  }
+  
+  .btn-indigo {
+    background: oklch(0.35 0.15 240);
+    color: oklch(0.97 0.01 80);
+    border: 2px solid oklch(0.25 0.12 240);
+    font-family: 'Noto Serif JP', serif;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    box-shadow: 3px 3px 0 oklch(0.18 0.08 240), inset 0 1px 0 rgba(255,255,255,0.15);
+    transition: all 0.1s ease;
+  }
+  .btn-indigo:hover {
+    transform: translate(-1px, -1px);
+    box-shadow: 4px 4px 0 oklch(0.18 0.08 240), inset 0 1px 0 rgba(255,255,255,0.15);
+  }
+  .btn-indigo:active {
+    transform: translate(2px, 2px);
+    box-shadow: 1px 1px 0 oklch(0.18 0.08 240);
+  }
+  
+  /* 和紙テクスチャ風カード */
+  .card-washi {
+    background: oklch(0.20 0.05 240);
+    border: 2px solid oklch(0.35 0.08 240);
+    box-shadow: 4px 4px 0 oklch(0.12 0.04 240);
+  }
+  
+  /* ゲージバー */
+  .gauge-bar {
+    height: 16px;
+    border: 2px solid oklch(0.35 0.08 240);
+    border-radius: 2px;
+    overflow: hidden;
+    background: oklch(0.12 0.04 240);
+  }
+  
+  /* 波アニメーション */
+  @keyframes wave {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
+  }
+  
+  @keyframes fishSwim {
+    0% { transform: translateX(0) scaleX(1); }
+    49% { transform: translateX(60px) scaleX(1); }
+    50% { transform: translateX(60px) scaleX(-1); }
+    99% { transform: translateX(0) scaleX(-1); }
+    100% { transform: translateX(0) scaleX(1); }
+  }
+  
+  @keyframes netRaise {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(-100%); }
+  }
+  
+  @keyframes supporterRun {
+    0% { transform: translateX(-100px); opacity: 0; }
+    20% { opacity: 1; }
+    100% { transform: translateX(0); opacity: 1; }
+  }
+  
+  @keyframes ripple {
+    0% { transform: scale(0); opacity: 0.8; }
+    100% { transform: scale(3); opacity: 0; }
+  }
+  
+  @keyframes boraEscape {
+    0% { transform: translateX(0); opacity: 1; }
+    100% { transform: translateX(200px); opacity: 0; }
+  }
+  
+  @keyframes scoreFloat {
+    0% { transform: translateY(0); opacity: 1; }
+    100% { transform: translateY(-60px); opacity: 0; }
+  }
+  
+  @keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 8px 2px oklch(0.55 0.22 25 / 0.5); }
+    50% { box-shadow: 0 0 16px 6px oklch(0.55 0.22 25 / 0.8); }
+  }
+  
+  .animate-wave {
+    animation: wave 2s ease-in-out infinite;
+  }
+  
+  .animate-fish-swim {
+    animation: fishSwim 4s ease-in-out infinite;
+  }
+  
+  .animate-supporter-run {
+    animation: supporterRun 0.8s ease-out forwards;
+  }
+  
+  .animate-ripple {
+    animation: ripple 1s ease-out forwards;
+  }
+  
+  .animate-bora-escape {
+    animation: boraEscape 1s ease-in forwards;
+  }
+  
+  .animate-score-float {
+    animation: scoreFloat 1.5s ease-out forwards;
+  }
+  
+  .animate-pulse-glow {
+    animation: pulse-glow 1.5s ease-in-out infinite;
+  }
+  
+  /* 筆文字風テキスト */
+  .font-serif-jp {
+    font-family: 'Noto Serif JP', serif;
+  }
+  
+  /* 木目テクスチャ風 */
+  .wood-texture {
+    background: linear-gradient(
+      135deg,
+      oklch(0.55 0.08 60) 0%,
+      oklch(0.48 0.07 55) 25%,
+      oklch(0.52 0.08 58) 50%,
+      oklch(0.45 0.07 52) 75%,
+      oklch(0.50 0.08 60) 100%
+    );
+  }
+  
+  /* 海の水面テクスチャ */
+  .sea-surface {
+    background: linear-gradient(
+      180deg,
+      oklch(0.55 0.12 210) 0%,
+      oklch(0.40 0.10 225) 40%,
+      oklch(0.28 0.08 240) 100%
+    );
+  }
+}
