@@ -11,4 +11,9 @@ class RouteNames {
   static const String fishingInIshikawaGame = '/fishing-in-ishikawa-game';
   static const String gengeStart = '/genge-start';
   static const String gengeGame = '/genge-game';
+
+  // ボラ待ちやぐらゲーム
+  static const String boraStart = '/bora-start';
+  static const String boraCharacter = '/bora-character';
+  static const String boraGame = '/bora-game';
 }

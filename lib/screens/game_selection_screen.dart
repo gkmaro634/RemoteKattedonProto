@@ -17,6 +17,7 @@ class _GameSelectionScreenState extends State<GameSelectionScreen> {
     'deshellingCrab': RouteNames.deshellingCrabStart,
     'fishingInIshikawa': RouteNames.fishingInIshikawaStart,
     'genge': RouteNames.gengeStart,
+    'bora': RouteNames.boraStart,
   };
 
   void _navigateToGame(String gameId) {
@@ -97,6 +98,7 @@ class _GameSelectionScreenState extends State<GameSelectionScreen> {
                         'deshellingCrab': AppTheme.deshellingCrabColor,
                         'fishingInIshikawa': AppTheme.fishingInIshikawaColor,
                         'genge': AppTheme.gengeColor,
+                        'bora': AppTheme.boraColor,
                       };
 
                       return GameCard(

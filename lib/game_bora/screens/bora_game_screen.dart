@@ -1,197 +1,274 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:remote_kattedon/game_genge/providers/game_notifier.dart';
-import 'package:remote_kattedon/game_genge/widgets/genge_game_painter.dart';
+import 'package:remote_kattedon/game_bora/models/bora_models.dart';
+import 'package:remote_kattedon/game_bora/providers/bora_game_notifier.dart';
+import 'package:remote_kattedon/game_bora/widgets/bora_game_painter.dart';
 import 'package:remote_kattedon/navigation/route_names.dart';
-import 'dart:async';
-import 'dart:ui' as ui;
+import 'dart:math';
 
-class GengeGameScreen extends ConsumerStatefulWidget {
-  const GengeGameScreen({super.key});
+class BoraGameScreen extends ConsumerStatefulWidget {
+  final Character? initialCharacter;
+  const BoraGameScreen({Key? key, this.initialCharacter}) : super(key: key);
 
   @override
-  ConsumerState<GengeGameScreen> createState() => _GengeGameScreenState();
+  ConsumerState<BoraGameScreen> createState() => _BoraGameScreenState();
 }
 
-class _GengeGameScreenState extends ConsumerState<GengeGameScreen>
+class _BoraGameScreenState extends ConsumerState<BoraGameScreen>
     with TickerProviderStateMixin {
   late AnimationController _animationController;
-  ui.Image? _backgroundImage;
-  ui.Image? _gengeImage;
-  bool _imagesLoaded = false;
+
 
   @override
   void initState() {
     super.initState();
-
-    // リセットしてから開始
-    final notifier = ref.read(gengeGameProvider.notifier);
-    notifier.resetGame();
+    // postpone starting the game until after build completes
+    if (widget.initialCharacter != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(boraGameProvider.notifier).startGame(widget.initialCharacter!);
+      });
+    }
 
     _animationController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 16), // 約60FPS
+      duration: const Duration(milliseconds: 16),
     )
       ..addListener(() {
-        if (!mounted) return;
-
-        ref.read(gengeGameProvider.notifier).updateFrame();
+        ref.read(boraGameProvider.notifier).updateFrame(0.016);
       })
       ..repeat();
-
-    _loadImages();
-  }
-
-  /// 画像を非同期で読み込む
-  void _loadImages() async {
-    try {
-      final bgImage = await _loadImageAsset('assets/images/genge/umi.jpg');
-      final gengeImg = await _loadImageAsset('assets/images/genge/genge.png');
-
-      if (mounted) {
-        setState(() {
-          _backgroundImage = bgImage;
-          _gengeImage = gengeImg;
-          _imagesLoaded = true;
-        });
-      }
-    } catch (e) {
-      debugPrint('Failed to load images: $e');
-    }
-  }
-
-  /// アセットから画像を読み込む
-  Future<ui.Image> _loadImageAsset(String assetPath) async {
-    final data = await DefaultAssetBundle.of(context).load(assetPath);
-    final codec = await ui.instantiateImageCodec(data.buffer.asUint8List());
-    final frame = await codec.getNextFrame();
-    return frame.image;
-  }
-
-  /// ゲーム開始
-  void _startGame() {
-    final notifier = ref.read(gengeGameProvider.notifier);
-    notifier.startGame();
-    setState(() {
-      // _gameStarted = true;
-    });
-  }
-
-  /// タップ位置でゲンゲがタップされたか判定
-  void _onCanvasTap(Offset position) {
-    final gameStateAsyncValue = ref.read(gengeGameProvider);
-
-    gameStateAsyncValue.whenData((gameState) {
-      if (!gameState.isGameOver && gameState.timeLeft > 0) {
-        // ゲンゲの矩形を取得
-        final screenSize = MediaQuery.of(context).size;
-
-        if (_gengeImage == null) return;
-
-        // ゲンゲのサイズ計算
-        const baseWidth = 400.0;
-        final aspectRatio =
-            _gengeImage!.height.toDouble() / _gengeImage!.width.toDouble();
-        final baseHeight = baseWidth * aspectRatio;
-
-        final shakeAmount = gameState.shakingFrames;
-        final drawWidth = baseWidth + (shakeAmount * 8);
-        final drawHeight = baseHeight - (shakeAmount * 4);
-
-        final centerX = screenSize.width / 2;
-        final centerY = screenSize.height / 2;
-
-        final gengeRect = Rect.fromCenter(
-          center: Offset(centerX, centerY),
-          width: drawWidth,
-          height: drawHeight,
-        );
-
-        if (gengeRect.contains(position)) {
-          ref.read(gengeGameProvider.notifier).onGengePressed(position);
-        }
-      } else if (gameState.isGameOver) {
-        // リトライボタン判定
-        final screenSize = MediaQuery.of(context).size;
-        const buttonWidth = 220.0;
-        const buttonHeight = 50.0;
-
-        final retryButtonRect = Rect.fromCenter(
-          center: Offset(screenSize.width / 2, screenSize.height / 2 + 290),
-          width: buttonWidth,
-          height: buttonHeight,
-        );
-
-        if (retryButtonRect.contains(position)) {
-          ref.read(gengeGameProvider.notifier).resetGame();
-          setState(() {
-            // _gameStarted = false;
-          });
-          _startGame();
-        }
-      }
-    });
   }
 
   @override
   void dispose() {
     _animationController.dispose();
-
     super.dispose();
+  }
+
+  void _onCanvasTap(Offset position) {
+    // not used for now
   }
 
   @override
   Widget build(BuildContext context) {
-    final gameAsyncState = ref.watch(gengeGameProvider);
+    final gameState = ref.watch(boraGameProvider);
+    final character = gameState.character;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('ぷるぷるゲンゲ'),
+        title: const Text('ボラ待ちやぐら'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.go(RouteNames.gameSelection),
         ),
       ),
       body: SafeArea(
-        child: gameAsyncState.when(
-          data: (gameState) {
-            if (!_imagesLoaded) {
-              return const Center(
-                child: CircularProgressIndicator(),
-              );
-            }
-
-            return GestureDetector(
-              onTapDown: (details) => _onCanvasTap(details.localPosition),
-              child: CustomPaint(
-                painter: GengeGamePainter(
-                  gameState: gameState,
-                  backgroundImage: _backgroundImage,
-                  gengeImage: _gengeImage,
-                  screenSize: Offset(
-                    MediaQuery.of(context).size.width,
-                    MediaQuery.of(context).size.height,
-                  ),
+        child: Column(
+          children: [
+            if (gameState.phase == GamePhase.waiting ||
+                gameState.phase == GamePhase.raising)
+              Container(
+                color: const Color(0xff141e2e),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(character != null ? '${character.emoji} ${character.name}' : '',
+                        style: const TextStyle(color: Colors.white)),
+                    Text(
+                      '⏱ ${max(0, 120 - gameState.gameTime.floor())}秒',
+                      style: TextStyle(
+                          color: gameState.gameTime > 100 ? Colors.redAccent : Colors.white),
+                    ),
+                  ],
                 ),
-                size: Size.infinite,
               ),
-            );
-          },
-          loading: () => const Center(
-            child: CircularProgressIndicator(),
-          ),
-          error: (error, stackTrace) => Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.error, size: 64, color: Colors.red),
-                const SizedBox(height: 16),
-                Text('エラーが発生しました: $error'),
-              ],
+            Expanded(
+              child: GestureDetector(
+                onTapDown: (d) => _onCanvasTap(d.localPosition),
+                child: CustomPaint(
+                  painter: BoraGamePainter(gameState: gameState),
+                  size: Size.infinite,
+                ),
+              ),
             ),
-          ),
+            _buildUiPanel(gameState, character),
+          ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildUiPanel(GameState state, Character? character) {
+    if (character == null) return const SizedBox.shrink();
+    final maxSupporters = getMaxSupporters(character);
+    final canCall = state.virtueGauge >= getVirtueCost(character) &&
+        state.supporters.length < maxSupporters &&
+        !state.isRaising;
+    final boraInNet = state.boraCountInNet;
+    final virtueRatio = state.virtueGauge / state.maxVirtue;
+    Color virtueColor;
+    if (virtueRatio > 0.6) {
+      virtueColor = Colors.green;
+    } else if (virtueRatio > 0.3) {
+      virtueColor = Colors.yellow;
+    } else {
+      virtueColor = Colors.red;
+    }
+
+    return Container(
+      color: const Color(0xff141e2e),
+      padding: const EdgeInsets.all(8),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('🙏 人徳ゲージ', style: TextStyle(color: Colors.white, fontSize: 12)),
+                    Container(
+                      height: 8,
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.white70),
+                      ),
+                      child: FractionallySizedBox(
+                        alignment: Alignment.centerLeft,
+                        widthFactor: virtueRatio,
+                        child: Container(color: virtueColor),
+                      ),
+                    ),
+                    Text('${state.virtueGauge.floor()}/${state.maxVirtue.floor()}',
+                        style: const TextStyle(color: Colors.white, fontSize: 10)),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('🎣 引き上げ進捗', style: TextStyle(color: Colors.white, fontSize: 12)),
+                    Container(
+                      height: 8,
+                      decoration: BoxDecoration(border: Border.all(color: Colors.white70)),
+                      child: FractionallySizedBox(
+                        alignment: Alignment.centerLeft,
+                        widthFactor: state.netProgress / 100,
+                        child: Container(color: state.isRaising ? Colors.red : Colors.blue),
+                      ),
+                    ),
+                    Text('${state.netProgress.floor()}%',
+                        style: const TextStyle(color: Colors.white, fontSize: 10)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              _actionButton('応援を呼ぶ', canCall ? () => ref.read(boraGameProvider.notifier).onCallSupporter() : null,
+                  subtext: '人徳 -${getVirtueCost(character)} / ${state.supporters.length}/$maxSupporters'),
+              const SizedBox(width: 8),
+              _actionButton('網を引き上げる', state.isRaising ? null : () => ref.read(boraGameProvider.notifier).onRaiseNet(),
+                  subtext: '網の中 $boraInNet匹'),
+            ],
+          ),
+          if (state.supporters.isNotEmpty)
+            SizedBox(
+              height: 30,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                children: state.supporters.map((s) {
+                  return Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.blueGrey,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Row(
+                      children: [
+                        Text(s.emoji),
+                        const SizedBox(width: 4),
+                        Text(s.name, style: const TextStyle(color: Colors.white, fontSize: 10)),
+                        const SizedBox(width: 4),
+                        Text('${s.timeLeft.ceil()}s',
+                            style: TextStyle(
+                                color: s.timeLeft < 5 ? Colors.redAccent : Colors.white, fontSize: 10)),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+          if (state.phase == GamePhase.result) _buildResult(state, character),
+        ],
+      ),
+    );
+  }
+
+  Widget _actionButton(String label, VoidCallback? onPressed, {String? subtext}) {
+    return Expanded(
+      child: ElevatedButton(
+        onPressed: onPressed,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(label, textAlign: TextAlign.center),
+            if (subtext != null)
+              Text(subtext, style: const TextStyle(fontSize: 10), textAlign: TextAlign.center),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildResult(GameState state, Character character) {
+    String rankText;
+    if (state.score >= 2000) {
+      rankText = '大漁！';
+    } else if (state.score >= 1200) {
+      rankText = '豊漁';
+    } else if (state.score >= 600) {
+      rankText = '普通';
+    } else {
+      rankText = '不漁';
+    }
+
+    return Container(
+      color: Colors.black54,
+      padding: const EdgeInsets.all(8),
+      child: Column(
+        children: [
+          Text(rankText, style: const TextStyle(color: Colors.yellow, fontSize: 18)),
+          Text('捕れた: ${state.caughtBoras}匹', style: const TextStyle(color: Colors.white, fontSize: 12)),
+          Text('逃げた: ${state.escapedBoras}匹', style: const TextStyle(color: Colors.white, fontSize: 12)),
+          Text('時間: ${state.gameTime.floor()}秒', style: const TextStyle(color: Colors.white, fontSize: 12)),
+          Text('スコア: ${state.score}', style: const TextStyle(color: Colors.white, fontSize: 12)),
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              ElevatedButton(
+                onPressed: () {
+                  ref.read(boraGameProvider.notifier).reset(character);
+                },
+                child: const Text('もう一度'),
+              ),
+              const SizedBox(width: 8),
+              ElevatedButton(
+                onPressed: () {
+                  context.go(RouteNames.gameSelection);
+                },
+                child: const Text('タイトルへ'),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

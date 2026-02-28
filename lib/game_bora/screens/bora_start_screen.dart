@@ -5,14 +5,14 @@ import 'package:remote_kattedon/core/constants/app_constants.dart';
 import 'package:remote_kattedon/widgets/common_widgets.dart';
 import 'package:remote_kattedon/navigation/route_names.dart';
 
-class GengeStartScreen extends StatelessWidget {
-  const GengeStartScreen({Key? key}) : super(key: key);
+class BoraStartScreen extends StatelessWidget {
+  const BoraStartScreen({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('ぷるぷるゲンゲ'),
+        title: const Text('ボラ待ちやぐら'),
         elevation: 0,
       ),
       body: SafeArea(
@@ -29,7 +29,7 @@ class GengeStartScreen extends StatelessWidget {
                     width: 200,
                     height: 200,
                     child: Image.asset(
-                      'assets/images/genge/genge_icon.png',
+                      'assets/images/bora/bora_icon.png',
                       fit: BoxFit.contain,
                       errorBuilder: (context, error, stackTrace) {
                         return Center(
@@ -47,11 +47,11 @@ class GengeStartScreen extends StatelessWidget {
 
                   // ゲームタイトル
                   GameDescriptionCard(
-                    title: 'ぷるぷるゲンゲ',
-                    description: '15秒間で新鮮なゲンゲを連打してスコアを稼ごう！\n\n'
-                        'クリックでゲンゲを刺激して、\n'
-                        'スコアを競い合いましょう。',
-                    accentColor: AppTheme.gengeColor,
+                    title: 'ボラ待ちやぐら',
+                    description: 'ボラの群れを見張り、網を引き上げて捕獲しましょう！\n\n'
+                        'キャラクターを選び、人徳ゲージを使って応援を呼び、\n'
+                        '120秒以内にできるだけ多く捕まえよう。',
+                    accentColor: AppTheme.boraColor,
                   ),
                   const SizedBox(height: AppConstants.largePadding * 1.5),
 
@@ -59,8 +59,8 @@ class GengeStartScreen extends StatelessWidget {
                   GameStartButton(
                     label: 'START',
                     onPressed: () {
-                      // ゲーム画面に遷移
-                      context.go(RouteNames.gengeGame);
+                      // キャラクター選択画面に遷移
+                      context.go(RouteNames.boraCharacter);
                     },
                   ),
                   const SizedBox(height: AppConstants.largePadding),
