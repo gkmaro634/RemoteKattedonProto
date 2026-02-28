@@ -170,10 +170,47 @@ class _BoraGameScreenState extends ConsumerState<BoraGameScreen>
             ],
           ),
           const SizedBox(height: 8),
+          // スコアと捕獲数のバッジ表示
+          Row(
+            children: [
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: Colors.blueGrey,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('💰 捕獲: ${state.caughtBoras}',
+                          style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                      Text('⭐ スコア: ${state.score}',
+                          style: const TextStyle(color: Color(0xffffff00), fontSize: 12, fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: Colors.deepOrange,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text('👥 応援: ${state.supporters.length}/$maxSupporters',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
           Row(
             children: [
               _actionButton('応援を呼ぶ', canCall ? () => ref.read(boraGameProvider.notifier).onCallSupporter() : null,
-                  subtext: '人徳 -${getVirtueCost(character)} / ${state.supporters.length}/$maxSupporters'),
+                  subtext: '人徳 -${getVirtueCost(character)}'),
               const SizedBox(width: 8),
               _actionButton('網を引き上げる', state.isRaising ? null : () => ref.read(boraGameProvider.notifier).onRaiseNet(),
                   subtext: '網の中 $boraInNet匹'),

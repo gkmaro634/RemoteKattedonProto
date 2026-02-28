@@ -19,10 +19,14 @@ class BoraGamePainter extends CustomPainter {
     _drawYagara(canvas, size);
     // 網
     _drawNet(canvas, size);
+    // やぐらと網を結ぶロープ
+    _drawRope(canvas, size);
     // ボラ
     _drawBoras(canvas, size);
     // 網中バッジ
     _drawNetBadge(canvas, size);
+    // UI情報表示
+    _drawStats(canvas, size);
   }
 
   void _drawBackground(Canvas canvas, Size size) {
@@ -80,6 +84,33 @@ class BoraGamePainter extends CustomPainter {
     canvas.drawCircle(Offset(leftX, waterY - 40), 11, headPaint);
   }
 
+  void _drawRope(Canvas canvas, Size size) {
+    final waterY = size.height * 0.45;
+    final yagaraX = size.width * 0.78;
+    final topY = size.height * (0.45 + 0.02 + (1 - gameState.netProgress / 100) * 0.35);
+    final left = size.width * 0.18;
+    final right = size.width * 0.82;
+    
+    final ropePaint = Paint()
+      ..color = const Color(0xffd4a574)
+      ..strokeWidth = 3
+      ..strokeCap = StrokeCap.round;
+    
+    // ロープ1: やぐら上端 -> 網の右上コーナー
+    canvas.drawLine(
+      Offset(yagaraX, waterY - 40),
+      Offset(right, topY),
+      ropePaint,
+    );
+    
+    // ロープ2: やぐら上端 -> 網の左上コーナー
+    canvas.drawLine(
+      Offset(yagaraX, waterY - 40),
+      Offset(left, topY),
+      ropePaint,
+    );
+  }
+
   void _drawNet(Canvas canvas, Size size) {
     final topY = size.height * (0.45 + 0.02 + (1 - gameState.netProgress / 100) * 0.35);
     final left = size.width * 0.18;
@@ -124,6 +155,37 @@ class BoraGamePainter extends CustomPainter {
         style: const TextStyle(color: Colors.white, fontSize: 14));
     textPainter.layout();
     textPainter.paint(canvas, Offset(size.width / 2 - textPainter.width / 2, y));
+  }
+
+  void _drawStats(Canvas canvas, Size size) {
+    final textPainter = TextPainter(textDirection: TextDirection.ltr);
+    
+    // 左下: 捕獲数
+    final caughtText = '💰 捕獲: ${gameState.caughtBoras}';
+    textPainter.text = TextSpan(
+      text: caughtText,
+      style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+    );
+    textPainter.layout();
+    textPainter.paint(canvas, Offset(8, size.height - 40));
+    
+    // 右下: スコア
+    final scoreText = '⭐ スコア: ${gameState.score}';
+    textPainter.text = TextSpan(
+      text: scoreText,
+      style: const TextStyle(color: const Color(0xffffff00), fontSize: 14, fontWeight: FontWeight.bold),
+    );
+    textPainter.layout();
+    textPainter.paint(canvas, Offset(size.width - textPainter.width - 8, size.height - 40));
+    
+    // 左上: 応援中人数
+    final supporterText = '👥 応援: ${gameState.supporters.length}';
+    textPainter.text = TextSpan(
+      text: supporterText,
+      style: const TextStyle(color: Colors.white, fontSize: 12),
+    );
+    textPainter.layout();
+    textPainter.paint(canvas, Offset(8, 8));
   }
 
   @override
