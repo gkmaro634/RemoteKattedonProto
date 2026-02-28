@@ -19,7 +19,6 @@ class _BoraGameScreenState extends ConsumerState<BoraGameScreen>
     with TickerProviderStateMixin {
   late AnimationController _animationController;
 
-
   @override
   void initState() {
     super.initState();
@@ -36,6 +35,8 @@ class _BoraGameScreenState extends ConsumerState<BoraGameScreen>
     )
       ..addListener(() {
         ref.read(boraGameProvider.notifier).updateFrame(0.016);
+
+        setState(() {});
       })
       ..repeat();
   }
