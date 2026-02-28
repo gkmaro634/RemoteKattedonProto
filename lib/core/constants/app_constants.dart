@@ -26,6 +26,12 @@ class AppConstants {
       description: 'ゲンゲを連打してスコアを稼ごう！',
       icon: '🐟️',
     ),
+    GameInfo(
+      id: 'bora',
+      title: 'ボラ待ちやぐら',
+      description: 'ボラの群れを待って網を引き上げよう！',
+      icon: '🎣',
+    ),
   ];
 
   // UI定数

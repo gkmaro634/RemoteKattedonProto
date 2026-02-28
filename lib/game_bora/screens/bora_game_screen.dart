@@ -1,0 +1,313 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:remote_kattedon/game_bora/models/bora_models.dart';
+import 'package:remote_kattedon/game_bora/providers/bora_game_notifier.dart';
+import 'package:remote_kattedon/game_bora/widgets/bora_game_painter.dart';
+import 'package:remote_kattedon/navigation/route_names.dart';
+import 'dart:math';
+
+class BoraGameScreen extends ConsumerStatefulWidget {
+  final Character? initialCharacter;
+  const BoraGameScreen({Key? key, this.initialCharacter}) : super(key: key);
+
+  @override
+  ConsumerState<BoraGameScreen> createState() => _BoraGameScreenState();
+}
+
+class _BoraGameScreenState extends ConsumerState<BoraGameScreen>
+    with TickerProviderStateMixin {
+  late AnimationController _animationController;
+
+  @override
+  void initState() {
+    super.initState();
+    // postpone starting the game until after build completes
+    if (widget.initialCharacter != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(boraGameProvider.notifier).startGame(widget.initialCharacter!);
+      });
+    }
+
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 16),
+    )
+      ..addListener(() {
+        ref.read(boraGameProvider.notifier).updateFrame(0.016);
+
+        setState(() {});
+      })
+      ..repeat();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  void _onCanvasTap(Offset position) {
+    // not used for now
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final gameState = ref.watch(boraGameProvider);
+    final character = gameState.character;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('ボラ待ちやぐら'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go(RouteNames.gameSelection),
+        ),
+      ),
+      body: SafeArea(
+        child: Column(
+          children: [
+            if (gameState.phase == GamePhase.waiting ||
+                gameState.phase == GamePhase.raising)
+              Container(
+                color: const Color(0xff141e2e),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(character != null ? '${character.emoji} ${character.name}' : '',
+                        style: const TextStyle(color: Colors.white)),
+                    Text(
+                      '⏱ ${max(0, 120 - gameState.gameTime.floor())}秒',
+                      style: TextStyle(
+                          color: gameState.gameTime > 100 ? Colors.redAccent : Colors.white),
+                    ),
+                  ],
+                ),
+              ),
+            Expanded(
+              child: GestureDetector(
+                onTapDown: (d) => _onCanvasTap(d.localPosition),
+                child: CustomPaint(
+                  painter: BoraGamePainter(gameState: gameState),
+                  size: Size.infinite,
+                ),
+              ),
+            ),
+            _buildUiPanel(gameState, character),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildUiPanel(GameState state, Character? character) {
+    if (character == null) return const SizedBox.shrink();
+    final maxSupporters = getMaxSupporters(character);
+    final canCall = state.virtueGauge >= getVirtueCost(character) &&
+        state.supporters.length < maxSupporters &&
+        !state.isRaising;
+    final boraInNet = state.boraCountInNet;
+    final virtueRatio = state.virtueGauge / state.maxVirtue;
+    Color virtueColor;
+    if (virtueRatio > 0.6) {
+      virtueColor = Colors.green;
+    } else if (virtueRatio > 0.3) {
+      virtueColor = Colors.yellow;
+    } else {
+      virtueColor = Colors.red;
+    }
+
+    return Container(
+      color: const Color(0xff141e2e),
+      padding: const EdgeInsets.all(8),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('🙏 人徳ゲージ', style: TextStyle(color: Colors.white, fontSize: 12)),
+                    Container(
+                      height: 8,
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.white70),
+                      ),
+                      child: FractionallySizedBox(
+                        alignment: Alignment.centerLeft,
+                        widthFactor: virtueRatio,
+                        child: Container(color: virtueColor),
+                      ),
+                    ),
+                    Text('${state.virtueGauge.floor()}/${state.maxVirtue.floor()}',
+                        style: const TextStyle(color: Colors.white, fontSize: 10)),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('🎣 引き上げ進捗', style: TextStyle(color: Colors.white, fontSize: 12)),
+                    Container(
+                      height: 8,
+                      decoration: BoxDecoration(border: Border.all(color: Colors.white70)),
+                      child: FractionallySizedBox(
+                        alignment: Alignment.centerLeft,
+                        widthFactor: state.netProgress / 100,
+                        child: Container(color: state.isRaising ? Colors.red : Colors.blue),
+                      ),
+                    ),
+                    Text('${state.netProgress.floor()}%',
+                        style: const TextStyle(color: Colors.white, fontSize: 10)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          // スコアと捕獲数のバッジ表示
+          Row(
+            children: [
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: Colors.blueGrey,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('💰 捕獲: ${state.caughtBoras}',
+                          style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                      Text('⭐ スコア: ${state.score}',
+                          style: const TextStyle(color: Color(0xffffff00), fontSize: 12, fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: Colors.deepOrange,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text('👥 応援: ${state.supporters.length}/$maxSupporters',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              _actionButton('応援を呼ぶ', canCall ? () => ref.read(boraGameProvider.notifier).onCallSupporter() : null,
+                  subtext: '人徳 -${getVirtueCost(character)}'),
+              const SizedBox(width: 8),
+              _actionButton('網を引き上げる', state.isRaising ? null : () => ref.read(boraGameProvider.notifier).onRaiseNet(),
+                  subtext: '網の中 $boraInNet匹'),
+            ],
+          ),
+          if (state.supporters.isNotEmpty)
+            SizedBox(
+              height: 30,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                children: state.supporters.map((s) {
+                  return Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.blueGrey,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Row(
+                      children: [
+                        Text(s.emoji),
+                        const SizedBox(width: 4),
+                        Text(s.name, style: const TextStyle(color: Colors.white, fontSize: 10)),
+                        const SizedBox(width: 4),
+                        Text('${s.timeLeft.ceil()}s',
+                            style: TextStyle(
+                                color: s.timeLeft < 5 ? Colors.redAccent : Colors.white, fontSize: 10)),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+          if (state.phase == GamePhase.result) _buildResult(state, character),
+        ],
+      ),
+    );
+  }
+
+  Widget _actionButton(String label, VoidCallback? onPressed, {String? subtext}) {
+    return Expanded(
+      child: ElevatedButton(
+        onPressed: onPressed,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(label, textAlign: TextAlign.center),
+            if (subtext != null)
+              Text(subtext, style: const TextStyle(fontSize: 10), textAlign: TextAlign.center),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildResult(GameState state, Character character) {
+    String rankText;
+    if (state.score >= 2000) {
+      rankText = '大漁！';
+    } else if (state.score >= 1200) {
+      rankText = '豊漁';
+    } else if (state.score >= 600) {
+      rankText = '普通';
+    } else {
+      rankText = '不漁';
+    }
+
+    return Container(
+      color: Colors.black54,
+      padding: const EdgeInsets.all(8),
+      child: Column(
+        children: [
+          Text(rankText, style: const TextStyle(color: Colors.yellow, fontSize: 18)),
+          Text('捕れた: ${state.caughtBoras}匹', style: const TextStyle(color: Colors.white, fontSize: 12)),
+          Text('逃げた: ${state.escapedBoras}匹', style: const TextStyle(color: Colors.white, fontSize: 12)),
+          Text('時間: ${state.gameTime.floor()}秒', style: const TextStyle(color: Colors.white, fontSize: 12)),
+          Text('スコア: ${state.score}', style: const TextStyle(color: Colors.white, fontSize: 12)),
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              ElevatedButton(
+                onPressed: () {
+                  ref.read(boraGameProvider.notifier).reset(character);
+                },
+                child: const Text('もう一度'),
+              ),
+              const SizedBox(width: 8),
+              ElevatedButton(
+                onPressed: () {
+                  context.go(RouteNames.gameSelection);
+                },
+                child: const Text('タイトルへ'),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
