@@ -120,30 +120,30 @@ class GameState {
 
 /// キャラクターデータ
 final Map<CharacterType, Character> CHARACTERS = {
-  CharacterType.power: Character(
+  CharacterType.power: const Character(
     id: CharacterType.power,
     name: 'パワー型',
     description:
         '力強い漁師。網の引き上げがたいへん速く、少ない応援でも短時間で引き上げられる。ボラが逃げる前に網を上げきる力務め漁師。',
-    stats: const CharacterStats(netSpeed: 8, visionRange: 2, virtue: 2),
+    stats: CharacterStats(netSpeed: 8, visionRange: 2, virtue: 2),
     maxVirtue: 60,
     emoji: '💪',
   ),
-  CharacterType.vision: Character(
+  CharacterType.vision: const Character(
     id: CharacterType.vision,
     name: '視力型',
     description:
         '鮮い目を持つ漁師。引き上げ中にボラが逃げにくく、人徳ゲージの回復が速い。網の速度は遅いが、ボラを逃さない目で大漁を目指す。',
-    stats: const CharacterStats(netSpeed: 2, visionRange: 5, virtue: 2),
+    stats: CharacterStats(netSpeed: 2, visionRange: 5, virtue: 2),
     maxVirtue: 60,
     emoji: '👁️',
   ),
-  CharacterType.virtue: Character(
+  CharacterType.virtue: const Character(
     id: CharacterType.virtue,
     name: '人徳型',
     description:
         '村で慕われる漁師。応援を呼ぶコストが安く、最大8人まで呼べる。名人や力持ちなど頑鯊な助っ人が集まりやすい。',
-    stats: const CharacterStats(netSpeed: 3, visionRange: 3, virtue: 5),
+    stats: CharacterStats(netSpeed: 3, visionRange: 3, virtue: 5),
     maxVirtue: 60,
     emoji: '🤝',
   ),
@@ -248,7 +248,7 @@ Supporter generateSupporter(Character character) {
 }
 
 Bora generateBora() {
-  final sizes = BoraSize.values;
+  const sizes = BoraSize.values;
   final size = sizes[Random().nextInt(sizes.length)];
   return Bora(
     id: _generateId(),
@@ -274,7 +274,7 @@ double calculateNetSpeed(Character character, List<Supporter> supporters) {
 }
 
 double calculateBoraEscapeRate(double netSpeed, [Character? character]) {
-  final baseEscapeRate = 0.5;
+  const baseEscapeRate = 0.5;
   final speedFactor = max(0, 1 - netSpeed / 20);
   final rawRate = baseEscapeRate + speedFactor * 0.5;
   if (character?.id == CharacterType.vision) return rawRate * 0.3;
