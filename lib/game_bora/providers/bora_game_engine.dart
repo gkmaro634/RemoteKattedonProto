@@ -15,6 +15,8 @@ class BoraGameEngine {
   double _boraDecreaseTimer = 0;
   double _virtueRegenTimer = 0;
 
+  final Random _rand = Random();
+
   // pending supporters (arrivalTime in milliseconds since epoch)
   final List<_PendingSupporter> pending = [];
 
@@ -45,25 +47,42 @@ class BoraGameEngine {
   }
 
   void update(double deltaTime) {
-    updateFish(deltaTime);
-    updateSupporters(deltaTime);
-    updateNet(deltaTime);
-    updateTimer(deltaTime);
-    
+    // top-level orchestration for update
     if (state.phase == GamePhase.result) return;
+
+    // advance global game time
     state.gameTime += deltaTime;
 
     final now = DateTime.now().millisecondsSinceEpoch;
 
-    // handle supporter arrivals
-    final arrived = pending.where((p) => p.arrivalTime <= now).toList();
-    pending.removeWhere((p) => p.arrivalTime <= now);
-    if (arrived.isNotEmpty) {
-      state.supporters.addAll(arrived.map((p) => p.supporter));
-    }
+    // process supporters arrival and timers
+    _processSupporterArrivals(now);
+    updateSupporters(deltaTime);
 
+    // update virtue regen and timers
+    updateTimer(deltaTime);
+
+    // update fish positions
+    updateFish(deltaTime);
+
+    // recompute net speed
+    state.netSpeed = calculateNetSpeed(character, state.supporters);
+
+    // perform net-related logic (raising / waiting)
+    updateNet(deltaTime);
+
+    // update derived counters
+    state.boraCountInNet = state.boras.where((b) => b.inNet && !b.escaping).length;
+
+    // check end condition
+    if (state.gameTime >= 120) {
+      state.phase = GamePhase.result;
+    }
+  }
+
+  void updateSupporters(double deltaTime) {
     if (!state.isRaising) {
-      // decrement supporter timers
+      // decrement supporter timers and remove expired
       state.supporters = state.supporters
           .map((s) {
             s.timeLeft = s.timeLeft - deltaTime;
@@ -72,39 +91,32 @@ class BoraGameEngine {
           .where((s) => s.timeLeft > 0)
           .toList();
     }
+  }
 
-    // calculate speed
-    state.netSpeed = calculateNetSpeed(character, state.supporters);
-
-    // virtue regen
-    _virtueRegenTimer += deltaTime;
-    if (_virtueRegenTimer >= 2) {
-      _virtueRegenTimer = 0;
-      state.virtueGauge = min(
-          state.maxVirtue, state.virtueGauge + getVirtueRegenRate(character));
-    }
-
-    // update bora positions
+  void updateFish(double deltaTime) {
     state.boras = state.boras
         .map((b) => updateBoraPosition(b, deltaTime, state.isRaising))
         .toList();
+  }
 
+  void updateNet(double deltaTime) {
     if (state.isRaising) {
-      state.netProgress =
-          min(100, state.netProgress + state.netSpeed * deltaTime);
+      state.netProgress = min(100, state.netProgress + state.netSpeed * deltaTime);
+
       // escape logic
       final escapeRate = calculateBoraEscapeRate(state.netSpeed, character);
       final escapeChance = escapeRate * deltaTime * 0.25;
       int escapedCount = 0;
       state.boras = state.boras.map((b) {
-        if (b.inNet && !b.escaping && Random().nextDouble() < escapeChance) {
+        if (b.inNet && !b.escaping && _rand.nextDouble() < escapeChance) {
           escapedCount++;
           b.escaping = true;
-          b.direction = Random().nextDouble() * 360;
+          b.direction = _rand.nextDouble() * 360;
         }
         return b;
       }).toList();
       state.escapedBoras += escapedCount;
+
       // remove escaped off-screen
       state.boras = state.boras.where((b) {
         if (b.escaping && (b.x < -5 || b.x > 105 || b.y < 15 || b.y > 100)) {
@@ -112,13 +124,13 @@ class BoraGameEngine {
         }
         return true;
       }).toList();
+
       // finished raising
       if (state.netProgress >= 100) {
         final caught = state.boras.where((b) => b.inNet && !b.escaping).length;
         state.caughtBoras += caught;
         state.boras = state.boras.where((b) => !b.inNet).toList();
-        state.score =
-            calculateScore(state.caughtBoras, state.gameTime, state.supporters);
+        state.score = calculateScore(state.caughtBoras, state.gameTime, state.supporters);
         state.netProgress = 0;
         state.isRaising = false;
       }
@@ -137,28 +149,30 @@ class BoraGameEngine {
       if (_boraDecreaseTimer >= (GAME_CONFIG['boraDecreaseInterval'] as num)) {
         _boraDecreaseTimer = 0;
         if (state.boras.length > (GAME_CONFIG['minBoraCount'] as int)) {
-          final idx = Random().nextInt(state.boras.length);
+          final idx = _rand.nextInt(state.boras.length);
           state.boras.removeAt(idx);
           state.escapedBoras++;
         }
       }
     }
+  }
 
-    state.boraCountInNet =
-        state.boras.where((b) => b.inNet && !b.escaping).length;
-
-    if (state.gameTime >= 120) {
-      state.phase = GamePhase.result;
+  void updateTimer(double deltaTime) {
+    // virtue regen
+    _virtueRegenTimer += deltaTime;
+    if (_virtueRegenTimer >= 2) {
+      _virtueRegenTimer = 0;
+      state.virtueGauge = min(state.maxVirtue, state.virtueGauge + getVirtueRegenRate(character));
     }
   }
 
-  void updateFish(double deltaTime) {}
-
-  void updateSupporters(double deltaTime) {}
-
-  void updateNet(double deltaTime) {}
-
-  void updateTimer(double deltaTime) {}
+  void _processSupporterArrivals(int now) {
+    final arrived = pending.where((p) => p.arrivalTime <= now).toList();
+    if (arrived.isNotEmpty) {
+      state.supporters.addAll(arrived.map((p) => p.supporter));
+      pending.removeWhere((p) => p.arrivalTime <= now);
+    }
+  }
 
   void callSupporter() {
     if (state.character == null) return;
