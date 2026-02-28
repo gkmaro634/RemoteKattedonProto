@@ -72,7 +72,8 @@ class BoraGameEngine {
     updateNet(deltaTime);
 
     // update derived counters
-    state.boraCountInNet = state.boras.where((b) => b.inNet && !b.escaping).length;
+    state.boraCountInNet =
+        state.boras.where((b) => b.inNet && !b.escaping).length;
 
     // check end condition
     if (state.gameTime >= 120) {
@@ -83,25 +84,24 @@ class BoraGameEngine {
   void updateSupporters(double deltaTime) {
     if (!state.isRaising) {
       // decrement supporter timers and remove expired
-      state.supporters = state.supporters
-          .map((s) {
-            s.timeLeft = s.timeLeft - deltaTime;
-            return s;
-          })
-          .where((s) => s.timeLeft > 0)
-          .toList();
+      for (final s in state.supporters) {
+        s.timeLeft -= deltaTime;
+      }
+
+      state.supporters.removeWhere((s) => s.timeLeft <= 0);
     }
   }
 
   void updateFish(double deltaTime) {
-    state.boras = state.boras
-        .map((b) => updateBoraPosition(b, deltaTime, state.isRaising))
-        .toList();
+    for (final b in state.boras) {
+      b.updateBoraPosition(deltaTime, state.isRaising);
+    }
   }
 
   void updateNet(double deltaTime) {
     if (state.isRaising) {
-      state.netProgress = min(100, state.netProgress + state.netSpeed * deltaTime);
+      state.netProgress =
+          min(100, state.netProgress + state.netSpeed * deltaTime);
 
       // escape logic
       final escapeRate = calculateBoraEscapeRate(state.netSpeed, character);
@@ -118,19 +118,16 @@ class BoraGameEngine {
       state.escapedBoras += escapedCount;
 
       // remove escaped off-screen
-      state.boras = state.boras.where((b) {
-        if (b.escaping && (b.x < -5 || b.x > 105 || b.y < 15 || b.y > 100)) {
-          return false;
-        }
-        return true;
-      }).toList();
+      state.boras.removeWhere((b) =>
+          b.escaping && (b.x < -5 || b.x > 105 || b.y < 15 || b.y > 100));
 
       // finished raising
       if (state.netProgress >= 100) {
         final caught = state.boras.where((b) => b.inNet && !b.escaping).length;
         state.caughtBoras += caught;
         state.boras = state.boras.where((b) => !b.inNet).toList();
-        state.score = calculateScore(state.caughtBoras, state.gameTime, state.supporters);
+        state.score =
+            calculateScore(state.caughtBoras, state.gameTime, state.supporters);
         state.netProgress = 0;
         state.isRaising = false;
       }
@@ -162,7 +159,8 @@ class BoraGameEngine {
     _virtueRegenTimer += deltaTime;
     if (_virtueRegenTimer >= 2) {
       _virtueRegenTimer = 0;
-      state.virtueGauge = min(state.maxVirtue, state.virtueGauge + getVirtueRegenRate(character));
+      state.virtueGauge = min(
+          state.maxVirtue, state.virtueGauge + getVirtueRegenRate(character));
     }
   }
 

@@ -76,6 +76,38 @@ class Bora {
     required this.inNet,
     required this.escaping,
   });
+
+  void updateBoraPosition(double deltaTime, [bool isRaising = false]) {
+    if (this.escaping) {
+      this.x += this.speed * 3 * cos(this.direction * pi / 180) * deltaTime;
+      this.y += this.speed * 3 * sin(this.direction * pi / 180) * deltaTime;
+      return;
+    }
+    final newDirection = this.direction + (Random().nextDouble() - 0.5) * 30;
+    double newX =
+        this.x + this.speed * cos(newDirection * pi / 180) * deltaTime * 10;
+    double newY =
+        this.y + this.speed * sin(newDirection * pi / 180) * deltaTime * 10;
+    newX = newX.clamp(5, 95);
+    newY = newY.clamp(30, 90);
+    final newInNet = isRaising && !this.inNet
+        ? false
+        : isBoraInNetArea(Bora(
+            id: this.id,
+            x: newX,
+            y: newY,
+            size: this.size,
+            speed: this.speed,
+            direction: newDirection,
+            inNet: this.inNet,
+            escaping: this.escaping,
+          ));
+    this.x = newX;
+    this.y = newY;
+    this.direction = newDirection;
+    this.inNet = newInNet;
+    return;
+  }
 }
 
 enum BoraSize { small, medium, large }
@@ -123,8 +155,7 @@ final Map<CharacterType, Character> CHARACTERS = {
   CharacterType.power: const Character(
     id: CharacterType.power,
     name: 'パワー型',
-    description:
-        '力強い漁師。網の引き上げがたいへん速く、少ない応援でも短時間で引き上げられる。ボラが逃げる前に網を上げきる力務め漁師。',
+    description: '力強い漁師。網の引き上げがたいへん速く、少ない応援でも短時間で引き上げられる。ボラが逃げる前に網を上げきる力務め漁師。',
     stats: CharacterStats(netSpeed: 8, visionRange: 2, virtue: 2),
     maxVirtue: 60,
     emoji: '💪',
@@ -141,8 +172,7 @@ final Map<CharacterType, Character> CHARACTERS = {
   CharacterType.virtue: const Character(
     id: CharacterType.virtue,
     name: '人徳型',
-    description:
-        '村で慕われる漁師。応援を呼ぶコストが安く、最大8人まで呼べる。名人や力持ちなど頑鯊な助っ人が集まりやすい。',
+    description: '村で慕われる漁師。応援を呼ぶコストが安く、最大8人まで呼べる。名人や力持ちなど頑鯊な助っ人が集まりやすい。',
     stats: CharacterStats(netSpeed: 3, visionRange: 3, virtue: 5),
     maxVirtue: 60,
     emoji: '🤝',
@@ -268,7 +298,8 @@ bool isBoraInNetArea(Bora bora) {
 
 double calculateNetSpeed(Character character, List<Supporter> supporters) {
   final baseSpeed = character.stats.netSpeed * 2;
-  final supportBonus = supporters.fold<double>(0, (sum, s) => sum + s.speedBonus);
+  final supportBonus =
+      supporters.fold<double>(0, (sum, s) => sum + s.speedBonus);
   final countMultiplier = 1 + supporters.length * 0.2;
   return (baseSpeed + supportBonus) * countMultiplier;
 }
@@ -281,7 +312,8 @@ double calculateBoraEscapeRate(double netSpeed, [Character? character]) {
   return rawRate;
 }
 
-int calculateScore(int caughtBoras, double gameTime, List<Supporter> supporters) {
+int calculateScore(
+    int caughtBoras, double gameTime, List<Supporter> supporters) {
   final baseScore = caughtBoras * 100;
   final timeBonus = max(0, 300 - gameTime).toInt() * 2;
   final supporterBonus = supporters.length * 50;
@@ -293,35 +325,6 @@ int getVirtueCost(Character character) {
   return 12;
 }
 
-Bora updateBoraPosition(Bora bora, double deltaTime, [bool isRaising = false]) {
-  if (bora.escaping) {
-    bora.x += bora.speed * 3 * cos(bora.direction * pi / 180) * deltaTime;
-    bora.y += bora.speed * 3 * sin(bora.direction * pi / 180) * deltaTime;
-    return bora;
-  }
-  final newDirection = bora.direction + (Random().nextDouble() - 0.5) * 30;
-  double newX = bora.x + bora.speed * cos(newDirection * pi / 180) * deltaTime * 10;
-  double newY = bora.y + bora.speed * sin(newDirection * pi / 180) * deltaTime * 10;
-  newX = newX.clamp(5, 95);
-  newY = newY.clamp(30, 90);
-  final newInNet = isRaising && !bora.inNet
-      ? false
-      : isBoraInNetArea(Bora(
-            id: bora.id,
-            x: newX,
-            y: newY,
-            size: bora.size,
-            speed: bora.speed,
-            direction: newDirection,
-            inNet: bora.inNet,
-            escaping: bora.escaping,
-          ));
-  bora.x = newX;
-  bora.y = newY;
-  bora.direction = newDirection;
-  bora.inNet = newInNet;
-  return bora;
-}
 
 const GAME_CONFIG = {
   'initialBoraCount': 8,
