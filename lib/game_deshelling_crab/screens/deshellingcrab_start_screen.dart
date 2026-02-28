@@ -29,8 +29,8 @@ class DeshellingCrabStartScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(16),
                     child: Image.asset(
                       'assets/images/deshelling_crab/top.png',
-                      height: 400,
-                      width: 400,
+                      // height: 200,
+                      width: double.infinity,
                       fit: BoxFit.contain,
                       errorBuilder: (_, __, ___) => Text(
                         '🦀',
@@ -43,7 +43,7 @@ class DeshellingCrabStartScreen extends StatelessWidget {
                   const SizedBox(height: AppConstants.largePadding),
 
                   // ゲームタイトル
-                  GameDescriptionCard(
+                  const GameDescriptionCard(
                     title: '蟹解体チャレンジ',
                     description: '蟹を正しい手順で上手に解体しよう！\n\n'
                         '新鮮な蟹を最高のおいしさで食べるために、\n'
