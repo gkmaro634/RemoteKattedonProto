@@ -26,8 +26,8 @@ class GengeStartScreen extends StatelessWidget {
                 children: [
                   // ゲームアイコン（アセット化されたアイコンを表示、なければ絵文字でフォールバック）
                   SizedBox(
-                    width: 200,
-                    height: 200,
+                    width: double.infinity,
+                    // height: 200,
                     child: Image.asset(
                       'assets/images/genge/genge.png',
                       fit: BoxFit.contain,

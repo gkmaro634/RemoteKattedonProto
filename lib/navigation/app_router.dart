@@ -16,7 +16,7 @@ import 'route_names.dart';
 
 class AppRouter {
   static final GoRouter router = GoRouter(
-    initialLocation: RouteNames.home,
+    initialLocation: RouteNames.gameSelection,
     routes: [
       // ホーム画面
       GoRoute(

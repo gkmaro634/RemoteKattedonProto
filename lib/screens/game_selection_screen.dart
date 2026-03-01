@@ -89,7 +89,10 @@ class _GameSelectionScreenState extends State<GameSelectionScreen> {
                       crossAxisCount: isMobile ? 1 : 3,
                       crossAxisSpacing: AppConstants.defaultPadding,
                       mainAxisSpacing: AppConstants.defaultPadding,
-                      childAspectRatio: 1.0,
+                      // モバイルではカード高さをアイコン／テキストが収まる最小限にする
+                      // childAspectRatio = width / height。
+                      // crossAxisCount が 1 のとき幅が広くなるため、大きめの比率で高さを小さくする。
+                      childAspectRatio: isMobile ? 3.0 : 1.0,
                     ),
                     itemCount: AppConstants.availableGames.length,
                     itemBuilder: (context, index) {
