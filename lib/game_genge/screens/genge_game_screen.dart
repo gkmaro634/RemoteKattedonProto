@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:remote_kattedon/game_genge/models/genge_layout.dart';
 import 'package:remote_kattedon/game_genge/providers/game_notifier.dart';
 import 'package:remote_kattedon/game_genge/widgets/genge_game_painter.dart';
 import 'package:remote_kattedon/navigation/route_names.dart';
@@ -20,6 +21,7 @@ class _GengeGameScreenState extends ConsumerState<GengeGameScreen>
   ui.Image? _backgroundImage;
   ui.Image? _gengeImage;
   bool _imagesLoaded = false;
+  final GlobalKey _paintKey = GlobalKey();
 
   @override
   void initState() {
@@ -84,54 +86,43 @@ class _GengeGameScreenState extends ConsumerState<GengeGameScreen>
 
     gameStateAsyncValue.whenData((gameState) {
       if (!gameState.isGameOver && gameState.timeLeft > 0) {
-        // ゲンゲの矩形を取得
-        final screenSize = MediaQuery.of(context).size;
-
-        if (_gengeImage == null) return;
-
-        // ゲンゲのサイズ計算
-        const baseWidth = 400.0;
-        final aspectRatio =
-            _gengeImage!.height.toDouble() / _gengeImage!.width.toDouble();
-        final baseHeight = baseWidth * aspectRatio;
-
-        final shakeAmount = gameState.shakingFrames;
-        final drawWidth = baseWidth + (shakeAmount * 8);
-        final drawHeight = baseHeight - (shakeAmount * 4);
-
-        final centerX = screenSize.width / 2;
-        final centerY = screenSize.height / 2;
-
-        final gengeRect = Rect.fromCenter(
-          center: Offset(centerX, centerY),
-          width: drawWidth,
-          height: drawHeight,
+        final renderBox =
+            _paintKey.currentContext!.findRenderObject() as RenderBox;
+        final canvasSize = renderBox.size;
+        final gengeRect = calcGengeRect(
+          canvasSize: canvasSize,
+          imageWidth: _gengeImage!.width.toDouble(),
+          imageHeight: _gengeImage!.height.toDouble(),
+          shakingFrames: gameState.shakingFrames,
         );
 
+        if (_gengeImage == null) return;
         if (gengeRect.contains(position)) {
           ref.read(gengeGameProvider.notifier).onGengePressed(position);
         }
-      } else if (gameState.isGameOver) {
-        // リトライボタン判定
-        final screenSize = MediaQuery.of(context).size;
-        const buttonWidth = 220.0;
-        const buttonHeight = 50.0;
-
-        final retryButtonRect = Rect.fromCenter(
-          center: Offset(screenSize.width / 2, screenSize.height / 2 + 290),
-          width: buttonWidth,
-          height: buttonHeight,
-        );
-
-        if (retryButtonRect.contains(position)) {
-          ref.read(gengeGameProvider.notifier).resetGame();
-          setState(() {
-            // _gameStarted = false;
-          });
-          _startGame();
-        }
-      }
+      } 
     });
+  }
+
+  Widget _buildRetryButton() {
+    return Center(
+      child: Transform.translate(
+        offset: const Offset(0, 290),
+        child: ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            minimumSize: const Size(220, 50),
+            backgroundColor: Colors.white,
+            foregroundColor: Colors.black,
+
+          ),
+          onPressed: () {
+            ref.read(gengeGameProvider.notifier).resetGame();
+            _startGame();
+          },
+          child: const Text("もう一度ぷるぷる"),
+        ),
+      ),
+    );
   }
 
   @override
@@ -162,20 +153,27 @@ class _GengeGameScreenState extends ConsumerState<GengeGameScreen>
               );
             }
 
-            return GestureDetector(
-              onTapDown: (details) => _onCanvasTap(details.localPosition),
-              child: CustomPaint(
-                painter: GengeGamePainter(
-                  gameState: gameState,
-                  backgroundImage: _backgroundImage,
-                  gengeImage: _gengeImage,
-                  screenSize: Offset(
-                    MediaQuery.of(context).size.width,
-                    MediaQuery.of(context).size.height,
+            return Stack(
+              children: [
+                GestureDetector(
+                  onTapDown: (details) {
+                    final renderBox = _paintKey.currentContext!
+                        .findRenderObject() as RenderBox;
+                    final localPos =
+                        renderBox.globalToLocal(details.globalPosition);
+                    _onCanvasTap(localPos);
+                  },
+                  child: CustomPaint(
+                    key: _paintKey,
+                    painter: GengeGamePainter(
+                        gameState: gameState,
+                        gengeImage: _gengeImage!,
+                        backgroundImage: _backgroundImage!),
+                    size: Size.infinite,
                   ),
                 ),
-                size: Size.infinite,
-              ),
+                if (gameState.isGameOver) _buildRetryButton(),
+              ],
             );
           },
           loading: () => const Center(

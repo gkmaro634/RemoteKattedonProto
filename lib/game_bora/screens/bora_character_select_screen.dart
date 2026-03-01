@@ -56,7 +56,7 @@ class _BoraCharacterSelectScreenState extends State<BoraCharacterSelectScreen> {
                     crossAxisSpacing: 16,
                     mainAxisSpacing: 16,
                     // モバイルでは縦長すぎないよう、高さを小さくする（width/height）。
-                    childAspectRatio: isMobile ? 3.2 : 1.2,
+                    childAspectRatio: isMobile ? 1.8 : 1.2,
                     children: CHARACTERS.values.map((char) {
                       final isSelected = _selected == char.id;
                       return GestureDetector(

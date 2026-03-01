@@ -79,7 +79,7 @@ class _GameSelectionScreenState extends State<GameSelectionScreen> {
                     '待ち時間を活用して、海の知識を学ぼう！',
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
-                  const SizedBox(height: AppConstants.largePadding * 1.5),
+                  const SizedBox(height: AppConstants.largePadding * 1.0),
 
                   // ゲーム一覧グリッド
                   GridView.builder(
@@ -92,7 +92,7 @@ class _GameSelectionScreenState extends State<GameSelectionScreen> {
                       // モバイルではカード高さをアイコン／テキストが収まる最小限にする
                       // childAspectRatio = width / height。
                       // crossAxisCount が 1 のとき幅が広くなるため、大きめの比率で高さを小さくする。
-                      childAspectRatio: isMobile ? 3.0 : 1.0,
+                      childAspectRatio: isMobile ? 2.0 : 1.0,
                     ),
                     itemCount: AppConstants.availableGames.length,
                     itemBuilder: (context, index) {
