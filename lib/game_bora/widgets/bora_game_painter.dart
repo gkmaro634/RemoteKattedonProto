@@ -15,10 +15,6 @@ class BoraGamePainter extends CustomPainter {
     _drawWaterLine(canvas, size);
     // サポーター
     _drawSupporters(canvas, size);
-    // やぐらとロープ
-    _drawYagara(canvas, size);
-    // 網
-    _drawNet(canvas, size);
     // やぐらと網を結ぶロープ
     _drawRope(canvas, size);
     // ボラ
@@ -27,6 +23,10 @@ class BoraGamePainter extends CustomPainter {
     _drawNetBadge(canvas, size);
     // UI情報表示
     _drawStats(canvas, size);
+    // やぐらとロープ
+    _drawYagara(canvas, size);
+    // 網
+    _drawNet(canvas, size);
   }
 
   void _drawBackground(Canvas canvas, Size size) {
@@ -79,9 +79,19 @@ class BoraGamePainter extends CustomPainter {
       ..strokeCap = StrokeCap.round;
     final leftX = size.width * 0.78;
     canvas.drawLine(Offset(leftX, waterY - 48), Offset(leftX, size.height), paint);
-    // simple humanoid figure
-    final headPaint = Paint()..color = const Color(0xffffe0b2);
-    canvas.drawCircle(Offset(leftX, waterY - 40), 11, headPaint);
+    // draw selected character emoji as head if available, otherwise fallback to simple circle
+    final emoji = gameState.character?.emoji;
+    if (emoji != null && emoji.isNotEmpty) {
+      final tp = TextPainter(textDirection: TextDirection.ltr);
+      tp.text = TextSpan(text: emoji, style: const TextStyle(fontSize: 22));
+      tp.layout();
+      final dx = leftX - tp.width / 2;
+      final dy = waterY - 40 - tp.height / 2;
+      tp.paint(canvas, Offset(dx, dy));
+    } else {
+      final headPaint = Paint()..color = const Color(0xffffe0b2);
+      canvas.drawCircle(Offset(leftX, waterY - 40), 11, headPaint);
+    }
   }
 
   void _drawRope(Canvas canvas, Size size) {
@@ -179,7 +189,7 @@ class BoraGamePainter extends CustomPainter {
     textPainter.paint(canvas, Offset(size.width - textPainter.width - 8, size.height - 40));
     
     // 左上: 応援中人数
-    final supporterText = '👥 応援: ${gameState.supporters.length}';
+    final supporterText = '👥 応援: ${gameState.supporters.length}/${getMaxSupporters(gameState.character!)}';
     textPainter.text = TextSpan(
       text: supporterText,
       style: const TextStyle(color: Colors.white, fontSize: 12),
