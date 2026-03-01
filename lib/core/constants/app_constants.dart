@@ -24,13 +24,15 @@ class AppConstants {
       id: 'genge',
       title: 'ぷるぷるゲンゲ',
       description: 'ゲンゲを連打してスコアを稼ごう！',
-      icon: '🐟️',
+      icon: 'assets/images/icons/icon_genge.png',
+      iconType: 'image',
     ),
     GameInfo(
       id: 'bora',
       title: 'ボラ待ちやぐら',
       description: 'ボラの群れを待って網を引き上げよう！',
-      icon: '🎣',
+      icon: 'assets/images/icons/icon_bora.png',
+      iconType: 'image',
     ),
   ];
 
@@ -46,11 +48,13 @@ class GameInfo {
   final String title;
   final String description;
   final String icon;
+  final String iconType; // 'emoji' または 'image'
 
   const GameInfo({
     required this.id,
     required this.title,
     required this.description,
     required this.icon,
+    this.iconType = 'emoji',
   });
 }

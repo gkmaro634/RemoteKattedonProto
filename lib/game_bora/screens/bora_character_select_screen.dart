@@ -14,24 +14,7 @@ class BoraCharacterSelectScreen extends StatefulWidget {
 class _BoraCharacterSelectScreenState extends State<BoraCharacterSelectScreen> {
   CharacterType? _selected;
 
-  Widget _statBar(int value, {int max = 5}) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: List.generate(max, (i) {
-        return Container(
-          width: 14,
-          height: 6,
-          margin: const EdgeInsets.symmetric(horizontal: 1),
-          decoration: BoxDecoration(
-            color: i < value
-                ? const Color(0xFFFF5722)
-                : const Color(0xFFBDBDBD),
-            border: Border.all(color: const Color(0xFF9E9E9E)),
-          ),
-        );
-      }),
-    );
-  }
+  // Previously showed stat bars here; removed to reduce card height.
 
   void _onSelect(CharacterType type) {
     setState(() {
@@ -47,6 +30,8 @@ class _BoraCharacterSelectScreenState extends State<BoraCharacterSelectScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = MediaQuery.of(context).size.width < 600;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('漁師を選ぶ'),
@@ -67,16 +52,17 @@ class _BoraCharacterSelectScreenState extends State<BoraCharacterSelectScreen> {
                 const SizedBox(height: 16),
                 Expanded(
                   child: GridView.count(
-                    crossAxisCount: MediaQuery.of(context).size.width < 600 ? 1 : 3,
+                    crossAxisCount: isMobile ? 1 : 3,
                     crossAxisSpacing: 16,
                     mainAxisSpacing: 16,
-                    childAspectRatio: 0.75,
+                    // モバイルでは縦長すぎないよう、高さを小さくする（width/height）。
+                    childAspectRatio: isMobile ? 3.2 : 1.2,
                     children: CHARACTERS.values.map((char) {
                       final isSelected = _selected == char.id;
                       return GestureDetector(
                         onTap: () => _onSelect(char.id),
                         child: Container(
-                          padding: const EdgeInsets.all(12),
+                          padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
                             color: isSelected ? AppTheme.boraColor.withOpacity(0.2) : AppTheme.backgroundColor,
                             border: Border.all(
@@ -85,59 +71,42 @@ class _BoraCharacterSelectScreenState extends State<BoraCharacterSelectScreen> {
                             ),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Center(
-                                child: Text(
-                                  char.emoji,
-                                  style: const TextStyle(fontSize: 40),
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Center(
-                                child: Text(
-                                  char.name,
-                                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Expanded(
-                                child: Text(
-                                  char.description,
-                                  style: const TextStyle(fontSize: 12),
-                                  maxLines: 6,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          child: LayoutBuilder(
+                            builder: (context, constraints) {
+                              // カード内の利用可能幅から各統計列の幅を算出
+                              // final paddingTotal = 12 * 2; // Container の左右パディング
+                              // final gapTotal = 8 * 2; // SizedBox の合計幅
+                              // final statItemWidth = (constraints.maxWidth - paddingTotal - gapTotal) / 3;
+
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      const Text('引き上げ速度', style: TextStyle(fontSize: 10)),
-                                      _statBar(char.stats.netSpeed),
-                                    ],
+                                  Center(
+                                    child: Text(
+                                      char.emoji,
+                                      style: TextStyle(fontSize: isMobile ? 36 : 36),
+                                    ),
                                   ),
-                                  Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      const Text('視力', style: TextStyle(fontSize: 10)),
-                                      _statBar(char.stats.visionRange),
-                                    ],
+                                  const SizedBox(height: 0),
+                                  Center(
+                                    child: Text(
+                                      char.name,
+                                      style: TextStyle(fontSize: isMobile ? 16 : 16, fontWeight: FontWeight.bold),
+                                    ),
                                   ),
-                                  Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      const Text('人徳', style: TextStyle(fontSize: 10)),
-                                      _statBar(char.stats.virtue),
-                                    ],
+                                  const SizedBox(height: 8),
+                                  Flexible(
+                                    fit: FlexFit.loose,
+                                    child: Text(
+                                      char.description,
+                                      style: const TextStyle(fontSize: 12),
+                                      maxLines: isMobile ? 4 : 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
                                   ),
                                 ],
-                              ),
-                            ],
+                              );
+                            },
                           ),
                         ),
                       );

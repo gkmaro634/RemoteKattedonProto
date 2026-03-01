@@ -491,7 +491,7 @@ function GameCanvas({
               whiteSpace: 'nowrap',
             }}
           >
-            🐟 網の中: {state.boraCountInNet}匹
+            🐟 網の中: {state.boraCountInNet}尾
             {state.boraCountInNet >= GAME_CONFIG.netRaiseThreshold && (
               <span style={{ color: 'oklch(0.80 0.18 80)', marginLeft: '6px' }}>← 引き上げ時！</span>
             )}
@@ -585,7 +585,7 @@ function UIPanel({
       {/* スコア行 */}
       <div className="grid grid-cols-3 gap-2 px-3 pb-2">
         {[
-          { icon: '🐟', label: '捕獲', value: state.caughtBoras, unit: '匹' },
+          { icon: '🐟', label: '捕獲', value: state.caughtBoras, unit: '尾' },
           { icon: '🏆', label: 'スコア', value: state.score, unit: '' },
           { icon: '🤝', label: '応援中', value: state.supporters.length, unit: '人' },
         ].map(item => (
@@ -652,7 +652,7 @@ function UIPanel({
         >
           🎣 網を引き上げる<br/>
           <span className="text-xs opacity-75">
-            {state.isRaising ? '引き上げ中...' : `網の中 ${boraInNet}匹`}
+            {state.isRaising ? '引き上げ中...' : `網の中 ${boraInNet}尾`}
           </span>
         </button>
       </div>
@@ -749,8 +749,8 @@ function ResultScreen({
           </h3>
           <div className="space-y-2.5">
             {[
-              { label: '捕れたボラ', value: `${state.caughtBoras}匹`, icon: '🐟' },
-              { label: '逃げたボラ', value: `${state.escapedBoras}匹`, icon: '💨' },
+              { label: '捕れたボラ', value: `${state.caughtBoras}尾`, icon: '🐟' },
+              { label: '逃げたボラ', value: `${state.escapedBoras}尾`, icon: '💨' },
               { label: '漁の時間', value: `${Math.floor(state.gameTime)}秒`, icon: '⏱️' },
               { label: '最終スコア', value: `${state.score}点`, icon: '🏆', highlight: true },
             ].map((item) => (

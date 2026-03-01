@@ -147,7 +147,7 @@ class _BoraGameScreenState extends ConsumerState<BoraGameScreen>
                   ],
                 ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -170,80 +170,46 @@ class _BoraGameScreenState extends ConsumerState<BoraGameScreen>
             ],
           ),
           const SizedBox(height: 8),
-          // スコアと捕獲数のバッジ表示
-          Row(
-            children: [
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: Colors.blueGrey,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('💰 捕獲: ${state.caughtBoras}',
-                          style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
-                      Text('⭐ スコア: ${state.score}',
-                          style: const TextStyle(color: Color(0xffffff00), fontSize: 12, fontWeight: FontWeight.bold)),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: Colors.deepOrange,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text('👥 応援: ${state.supporters.length}/$maxSupporters',
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
           Row(
             children: [
               _actionButton('応援を呼ぶ', canCall ? () => ref.read(boraGameProvider.notifier).onCallSupporter() : null,
                   subtext: '人徳 -${getVirtueCost(character)}'),
               const SizedBox(width: 8),
               _actionButton('網を引き上げる', state.isRaising ? null : () => ref.read(boraGameProvider.notifier).onRaiseNet(),
-                  subtext: '網の中 $boraInNet匹'),
+                  subtext: '網の中 $boraInNet尾'),
             ],
           ),
-          if (state.supporters.isNotEmpty)
-            SizedBox(
-              height: 30,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                children: state.supporters.map((s) {
-                  return Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 4),
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.blueGrey,
-                      borderRadius: BorderRadius.circular(4),
+          // 常に最大3行分の領域を確保し、要素は幅に応じて折り返す
+          // 高さは 3 行 * 30px = 90px（必要に応じて調整可）
+          SizedBox(
+            height: 90,
+            child: state.supporters.isNotEmpty
+                ? SingleChildScrollView(
+                    child: Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: state.supporters.map((s) {
+                        return Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 2),
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.blueGrey,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(s.emoji),
+                              const SizedBox(width: 6),
+                              Text(s.name, style: const TextStyle(color: Colors.white, fontSize: 12)),
+                            ],
+                          ),
+                        );
+                      }).toList(),
                     ),
-                    child: Row(
-                      children: [
-                        Text(s.emoji),
-                        const SizedBox(width: 4),
-                        Text(s.name, style: const TextStyle(color: Colors.white, fontSize: 10)),
-                        const SizedBox(width: 4),
-                        Text('${s.timeLeft.ceil()}s',
-                            style: TextStyle(
-                                color: s.timeLeft < 5 ? Colors.redAccent : Colors.white, fontSize: 10)),
-                      ],
-                    ),
-                  );
-                }).toList(),
-              ),
-            ),
+                  )
+                : Container(),
+          ),
           if (state.phase == GamePhase.result) _buildResult(state, character),
         ],
       ),
@@ -284,8 +250,8 @@ class _BoraGameScreenState extends ConsumerState<BoraGameScreen>
       child: Column(
         children: [
           Text(rankText, style: const TextStyle(color: Colors.yellow, fontSize: 18)),
-          Text('捕れた: ${state.caughtBoras}匹', style: const TextStyle(color: Colors.white, fontSize: 12)),
-          Text('逃げた: ${state.escapedBoras}匹', style: const TextStyle(color: Colors.white, fontSize: 12)),
+          Text('捕れた: ${state.caughtBoras}尾', style: const TextStyle(color: Colors.white, fontSize: 12)),
+          Text('逃げた: ${state.escapedBoras}尾', style: const TextStyle(color: Colors.white, fontSize: 12)),
           Text('時間: ${state.gameTime.floor()}秒', style: const TextStyle(color: Colors.white, fontSize: 12)),
           Text('スコア: ${state.score}', style: const TextStyle(color: Colors.white, fontSize: 12)),
           const SizedBox(height: 4),
