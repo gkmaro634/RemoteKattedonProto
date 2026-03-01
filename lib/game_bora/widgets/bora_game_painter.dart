@@ -151,7 +151,7 @@ class BoraGamePainter extends CustomPainter {
     final y = size.height * (0.45 + 0.02 + 0.35) + 20;
     final textPainter = TextPainter(textDirection: TextDirection.ltr);
     textPainter.text = TextSpan(
-        text: '🐟 網の中: ${gameState.boraCountInNet}匹',
+        text: '🐟 網の中: ${gameState.boraCountInNet}尾',
         style: const TextStyle(color: Colors.white, fontSize: 14));
     textPainter.layout();
     textPainter.paint(canvas, Offset(size.width / 2 - textPainter.width / 2, y));
