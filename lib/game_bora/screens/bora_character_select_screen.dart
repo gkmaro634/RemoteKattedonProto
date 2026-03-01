@@ -74,9 +74,9 @@ class _BoraCharacterSelectScreenState extends State<BoraCharacterSelectScreen> {
                           child: LayoutBuilder(
                             builder: (context, constraints) {
                               // カード内の利用可能幅から各統計列の幅を算出
-                              final paddingTotal = 12 * 2; // Container の左右パディング
-                              final gapTotal = 8 * 2; // SizedBox の合計幅
-                              final statItemWidth = (constraints.maxWidth - paddingTotal - gapTotal) / 3;
+                              // final paddingTotal = 12 * 2; // Container の左右パディング
+                              // final gapTotal = 8 * 2; // SizedBox の合計幅
+                              // final statItemWidth = (constraints.maxWidth - paddingTotal - gapTotal) / 3;
 
                               return Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,

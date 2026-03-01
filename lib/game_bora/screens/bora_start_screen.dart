@@ -46,7 +46,7 @@ class BoraStartScreen extends StatelessWidget {
                   const SizedBox(height: AppConstants.largePadding),
 
                   // ゲームタイトル
-                  GameDescriptionCard(
+                  const GameDescriptionCard(
                     title: 'ボラ待ちやぐら',
                     description: 'ボラの群れを見張り、網を引き上げて捕獲しましょう！\n\n'
                         'キャラクターを選び、人徳ゲージを使って応援を呼び、\n'
