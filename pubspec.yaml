@@ -29,6 +29,7 @@ flutter:
     - assets/images/deshelling_crab/
     - assets/images/genge/
     - assets/images/bora/
+    - assets/images/icons/
     - assets/audio/genge/
 
   # fonts:

@@ -29,7 +29,7 @@ class GengeStartScreen extends StatelessWidget {
                     width: 200,
                     height: 200,
                     child: Image.asset(
-                      'assets/images/genge/genge_icon.png',
+                      'assets/images/genge/genge.png',
                       fit: BoxFit.contain,
                       errorBuilder: (context, error, stackTrace) {
                         return Center(

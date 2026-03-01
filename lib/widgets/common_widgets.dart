@@ -19,6 +19,22 @@ class GameCard extends StatelessWidget {
     this.colorScheme,
   }) : super(key: key);
 
+  Widget _buildIconWidget(String iconData) {
+    // '/' を含む場合は画像パスと判定
+    if (iconData.contains('/')) {
+      return Image.asset(
+        iconData,
+        fit: BoxFit.contain,
+      );
+    } else {
+      // 絵文字として表示
+      return Text(
+        iconData,
+        style: const TextStyle(fontSize: 40),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Material(
@@ -41,9 +57,10 @@ class GameCard extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    icon,
-                    style: const TextStyle(fontSize: 48),
+                  SizedBox(
+                    width: 64,
+                    height: 48,
+                    child: _buildIconWidget(icon),
                   ),
                   const SizedBox(height: AppConstants.smallPadding),
                   Text(
