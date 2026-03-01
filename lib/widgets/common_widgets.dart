@@ -72,7 +72,7 @@ class GameCard extends StatelessWidget {
                   const SizedBox(height: AppConstants.smallPadding),
                   Text(
                     description,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: AppTheme.textSecondary,
                     ),
                     maxLines: 3,

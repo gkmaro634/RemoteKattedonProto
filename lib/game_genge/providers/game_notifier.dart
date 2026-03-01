@@ -101,7 +101,10 @@ class GengeGameNotifier extends AutoDisposeAsyncNotifier<GengeGameState> {
   bool _handleGameOver = false;
 
   // audio player and asset paths
-  final AudioPlayer _audioPlayer = AudioPlayer();
+  // 結果用（1回だけ鳴る）とタップ用（連打される）を分ける
+  final AudioPlayer _resultPlayer = AudioPlayer();
+  late AudioPool _tapPool;
+
   static const String _soundTap = 'audio/genge/pochi.mp3';
   static const String _soundMaster = 'audio/genge/hakushu.mp3';
   static const String _soundNormal = 'audio/genge/koto.mp3';
@@ -111,12 +114,19 @@ class GengeGameNotifier extends AutoDisposeAsyncNotifier<GengeGameState> {
   Future<GengeGameState> build() async {
     print("GengeGameNotifier build");
 
+    _tapPool = await AudioPool.create(
+      source: AssetSource(_soundTap),
+      maxPlayers: 5,
+    );
+
     final highScore = await HighscoreService.loadHighscore();
     final initial = GengeGameState.initial(highScore);
     _engine = GengeGameEngine(state: initial, gameLimit: _gameLimit);
 
     ref.onDispose(() {
-      _audioPlayer.dispose();
+      _resultPlayer.dispose();
+      _tapPool.dispose();
+
       print("GengeGameNotifier disposed");
     });
 
@@ -152,10 +162,15 @@ class GengeGameNotifier extends AutoDisposeAsyncNotifier<GengeGameState> {
     ));
   }
 
+  void _playTapSound() {
+    _tapPool.start();
+  }
+
   void _playEndSound(int score) {
     String sound =
         score >= 100 ? _soundMaster : (score > 0 ? _soundNormal : _soundZero);
-    _audioPlayer.play(AssetSource(sound)).catchError((_) {});
+    _resultPlayer.stop();
+    _resultPlayer.play(AssetSource(sound)).catchError((_) {});
   }
 
   /// ゲンゲをタップしたときの処理
@@ -163,10 +178,9 @@ class GengeGameNotifier extends AutoDisposeAsyncNotifier<GengeGameState> {
     if (_engine == null) return;
 
     // タップ音
-    _audioPlayer.stop().then((_) => _audioPlayer.play(AssetSource(_soundTap)));
+    _playTapSound();
 
     _engine!.tap(tapPosition);
-
     state = AsyncValue.data(_engine!.state);
   }
 
@@ -197,7 +211,6 @@ class GengeGameNotifier extends AutoDisposeAsyncNotifier<GengeGameState> {
 
     _handleGameOver = false;
     state = AsyncValue.data(_engine!.state);
-    // state = AsyncValue.data(initial);
   }
 }
 

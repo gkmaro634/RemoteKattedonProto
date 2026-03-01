@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:remote_kattedon/game_genge/models/game_state.dart';
 import 'dart:ui' as ui;
 
-/// ゲンゲゲームを描画するカスタムペイナー
+import 'package:remote_kattedon/game_genge/models/genge_layout.dart';
+
+/// ゲンゲゲームを描画するカスタムペインター
 class GengeGamePainter extends CustomPainter {
   final GengeGameState gameState;
   final ui.Image? backgroundImage;
   final ui.Image? gengeImage;
-  final Offset screenSize;
   late final TextPainter scorePainter;
   late final TextPainter timePainter;
   late final TextPainter highScorePainter;
@@ -22,7 +23,6 @@ class GengeGamePainter extends CustomPainter {
     required this.gameState,
     required this.backgroundImage,
     required this.gengeImage,
-    required this.screenSize,
   }) {
     // テキストペインター
     scorePainter = TextPainter(textDirection: TextDirection.ltr);
@@ -73,32 +73,22 @@ class GengeGamePainter extends CustomPainter {
   void _drawGenge(Canvas canvas, Size size) {
     if (gengeImage == null) return;
 
-    const baseWidth = 400.0;
-    final baseHeight = baseWidth * gengeAspectRatio;
-
-    // 揺れ演出によるサイズ変更
-    final shakeAmount = gameState.shakingFrames;
-    final drawWidth = baseWidth + (shakeAmount * 8);
-    final drawHeight = baseHeight - (shakeAmount * 4);
-
-    final centerX = size.width / 2;
-    final centerY = size.height / 2;
-
-    // 描画位置（中央）
-    final rect = Rect.fromCenter(
-      center: Offset(centerX, centerY),
-      width: drawWidth,
-      height: drawHeight,
+    final srcRect = Rect.fromLTWH(
+      0,
+      0,
+      gengeImageWidth.toDouble(),
+      gengeImageHeight.toDouble(),
     );
-
+    // 描画位置（中央）
+    final rect = calcGengeRect(
+      canvasSize: size,
+      imageWidth: gengeImageWidth.toDouble(),
+      imageHeight: gengeImageHeight.toDouble(),
+      shakingFrames: gameState.shakingFrames,
+    );
     canvas.drawImageRect(
       gengeImage!,
-      Rect.fromLTWH(
-        0,
-        0,
-        gengeImageWidth.toDouble(),
-        gengeImageHeight.toDouble(),
-      ),
+      srcRect,
       rect,
       Paint(),
     );
@@ -106,7 +96,6 @@ class GengeGamePainter extends CustomPainter {
 
   /// パーティクルを描画
   void _drawParticles(Canvas canvas) {
-
     for (final particle in gameState.particles) {
       final radius = (particle.lifespan / 3).clamp(0, 10).toDouble();
       canvas.drawCircle(
@@ -228,36 +217,6 @@ class GengeGamePainter extends CustomPainter {
       );
     }
 
-    // リトライボタン
-    final buttonRect = Rect.fromCenter(
-      center: Offset(centerX, size.height / 2 + 290),
-      width: 220,
-      height: 50,
-    );
-
-    final buttonPaint = Paint()..color = Colors.white;
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(buttonRect, const Radius.circular(12)),
-      buttonPaint,
-    );
-
-    textPainter.text = const TextSpan(
-      text: 'もう一度ぷるぷる',
-      style: TextStyle(
-        color: Colors.black,
-        fontSize: 16,
-        fontFamily: 'Meiryo',
-        fontWeight: FontWeight.bold,
-      ),
-    );
-    textPainter.layout();
-    textPainter.paint(
-      canvas,
-      Offset(
-        centerX - textPainter.width / 2,
-        size.height / 2 + 265,
-      ),
-    );
   }
 
   /// ゲンゲの矩形（判定用）を取得
