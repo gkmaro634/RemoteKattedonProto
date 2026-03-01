@@ -44,7 +44,7 @@ String _imageForStep(DeconstructionStep step) {
 String _explanationImageForStep(DeconstructionStep step) {
   // 作業説明用画像のパス assets/images/deshelling_crab/step_detail_01.png を返す
   final number = step.stepNumber.toString().padLeft(2, '0');
-  return 'assets/images/deshelling_crab/step_detail_$number.png';
+  return 'assets/images/deshelling_crab/step_detail_$number.jpeg';
 }
 
 /// 解体ゲームのプロトタイプ画面。
@@ -108,7 +108,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                         borderRadius: BorderRadius.circular(16),
 /// 借体画面の完成画像 を表示し、戻るボタンを出し（ゲームクリア継美带までの流れ
                         child: Image.asset(
-                          'assets/images/deshelling_crab/step13.png', // 完成画像
+                          'assets/images/deshelling_crab/step13.jpeg', // 完成画像
                           fit: BoxFit.contain,
                           errorBuilder: (_, __, ___) =>
                               const Icon(Icons.image_not_supported, size: 80),
