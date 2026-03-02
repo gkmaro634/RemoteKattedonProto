@@ -1,4 +1,7 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:remote_kattedon/game_bora/models/bora_models.dart';
@@ -18,6 +21,16 @@ class BoraGameScreen extends ConsumerStatefulWidget {
 class _BoraGameScreenState extends ConsumerState<BoraGameScreen>
     with TickerProviderStateMixin {
   late AnimationController _animationController;
+  ui.Image? _boraImage;
+
+  Future<void> _loadBoraImage() async {
+    final data = await rootBundle.load('assets/images/bora/bora.png');
+    final codec = await ui.instantiateImageCodec(data.buffer.asUint8List());
+    final frame = await codec.getNextFrame();
+    setState(() {
+      _boraImage = frame.image;
+    });
+  }
 
   @override
   void initState() {
@@ -28,6 +41,8 @@ class _BoraGameScreenState extends ConsumerState<BoraGameScreen>
         ref.read(boraGameProvider.notifier).startGame(widget.initialCharacter!);
       });
     }
+
+    _loadBoraImage();
 
     _animationController = AnimationController(
       vsync: this,
@@ -89,7 +104,7 @@ class _BoraGameScreenState extends ConsumerState<BoraGameScreen>
               child: GestureDetector(
                 onTapDown: (d) => _onCanvasTap(d.localPosition),
                 child: CustomPaint(
-                  painter: BoraGamePainter(gameState: gameState),
+                  painter: BoraGamePainter(gameState: gameState, boraImage: _boraImage),
                   size: Size.infinite,
                 ),
               ),
