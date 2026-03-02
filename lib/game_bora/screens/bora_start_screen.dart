@@ -29,7 +29,7 @@ class BoraStartScreen extends StatelessWidget {
                     width: double.infinity,
                     // height: 200,
                     child: Image.asset(
-                      'assets/images/bora/bora.png',
+                      'assets/images/bora/top.jpg',
                       fit: BoxFit.contain,
                       errorBuilder: (context, error, stackTrace) {
                         return Center(
