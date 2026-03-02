@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 import 'package:remote_kattedon/game_bora/models/bora_models.dart';
 import 'dart:ui';
@@ -5,7 +7,8 @@ import 'dart:ui';
 /// カスタムペインタでゲームフィールドを描画
 class BoraGamePainter extends CustomPainter {
   final GameState gameState;
-  BoraGamePainter({required this.gameState});
+  final ui.Image? boraImage;
+  BoraGamePainter({required this.gameState, this.boraImage});
 
   // 共通のレイアウト計算用プロパティ
   late final double waterY;
@@ -17,7 +20,7 @@ class BoraGamePainter extends CustomPainter {
     waterY = size.height * 0.45;
     yagaraX = size.width * 0.78;
     // 櫓の構造に合わせて、前回のコードの足場位置を基準にする
-    platformY = waterY - size.height * 0.20; 
+    platformY = waterY - size.height * 0.20;
   }
 
   @override
@@ -167,7 +170,8 @@ class BoraGamePainter extends CustomPainter {
 
   void _drawRope(Canvas canvas, Size size) {
     // 共通変数を利用
-    final netTopY = size.height * (0.45 + 0.02 + (1 - gameState.netProgress / 100) * 0.35);
+    final netTopY =
+        size.height * (0.45 + 0.02 + (1 - gameState.netProgress / 100) * 0.35);
     final left = size.width * 0.18;
     final right = size.width * 0.82;
 
@@ -211,25 +215,76 @@ class BoraGamePainter extends CustomPainter {
   }
 
   void _drawBoras(Canvas canvas, Size size) {
-    final paint = Paint();
+    if (boraImage == null) return;
+
+    final srcRect = Rect.fromLTWH(
+      0,
+      0,
+      boraImage!.width.toDouble(),
+      boraImage!.height.toDouble(),
+    );
+
     for (var b in gameState.boras) {
       final px = size.width * b.x / 100;
       final py = size.height * (0.45 + 0.05 + b.y * 0.48 / 100);
-      final radius = {
-        BoraSize.small: 7.0,
-        BoraSize.medium: 10.0,
-        BoraSize.large: 14.0
+
+      final scale = {
+        BoraSize.small: 0.5,
+        BoraSize.medium: 0.8,
+        BoraSize.large: 1.1,
       }[b.size]!;
-      paint.color = b.inNet && !b.escaping
-          ? const Color(0xff80ccff)
-          : const Color(0xff336699);
-      canvas.drawOval(
-          Rect.fromCenter(
-              center: Offset(px, py), width: radius * 2, height: radius),
-          paint);
-      if (b.escaping) paint.color = paint.color.withOpacity(0.3);
+
+      final drawWidth = 40 * scale;
+      final drawHeight = drawWidth * boraImage!.height / boraImage!.width;
+
+      final dstRect = Rect.fromCenter(
+        center: Offset(px, py),
+        width: drawWidth,
+        height: drawHeight,
+      );
+
+      final paint = Paint();
+
+      if (b.inNet && !b.escaping) {
+        paint.colorFilter = const ColorFilter.mode(
+          Color(0xff80ccff),
+          BlendMode.modulate,
+        );
+      }
+
+      if (b.escaping) {
+        paint.color = const Color(0xffffffff).withOpacity(0.3);
+      }
+
+      canvas.drawImageRect(
+        boraImage!,
+        srcRect,
+        dstRect,
+        paint,
+      );
     }
   }
+
+  // void _drawBoras(Canvas canvas, Size size) {
+  //   final paint = Paint();
+  //   for (var b in gameState.boras) {
+  //     final px = size.width * b.x / 100;
+  //     final py = size.height * (0.45 + 0.05 + b.y * 0.48 / 100);
+  //     final radius = {
+  //       BoraSize.small: 7.0,
+  //       BoraSize.medium: 10.0,
+  //       BoraSize.large: 14.0
+  //     }[b.size]!;
+  //     paint.color = b.inNet && !b.escaping
+  //         ? const Color(0xff80ccff)
+  //         : const Color(0xff336699);
+  //     canvas.drawOval(
+  //         Rect.fromCenter(
+  //             center: Offset(px, py), width: radius * 2, height: radius),
+  //         paint);
+  //     if (b.escaping) paint.color = paint.color.withOpacity(0.3);
+  //   }
+  // }
 
   void _drawNetBadge(Canvas canvas, Size size) {
     if (gameState.boraCountInNet <= 0) return;
@@ -261,9 +316,7 @@ class BoraGamePainter extends CustomPainter {
     textPainter.text = TextSpan(
       text: scoreText,
       style: const TextStyle(
-          color: Color(0xffffff00),
-          fontSize: 14,
-          fontWeight: FontWeight.bold),
+          color: Color(0xffffff00), fontSize: 14, fontWeight: FontWeight.bold),
     );
     textPainter.layout();
     textPainter.paint(
