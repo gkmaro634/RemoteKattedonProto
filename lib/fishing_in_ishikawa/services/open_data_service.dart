@@ -1,18 +1,27 @@
 import 'dart:convert';
 
 import 'package:csv/csv.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:remote_kattedon/fishing_in_ishikawa/models/fishing_models.dart';
 
 class FishingOpenDataService {
-  static const String _defaultApiUrl =
-  'https://ckan.opendata.pref.ishikawa.lg.jp/dataset/b9e71183-5d58-4aa3-8a52-6c436993fa2e/resource/3a8105cc-4b7e-40b5-aa99-ca614d0fa32f/download/catch_amount_type.csv';
+  static const String _defaultDirectCsvUrl =
+      'https://ckan.opendata.pref.ishikawa.lg.jp/dataset/b9e71183-5d58-4aa3-8a52-6c436993fa2e/resource/3a8105cc-4b7e-40b5-aa99-ca614d0fa32f/download/catch_amount_type.csv';
 
-  static const String _apiUrl = String.fromEnvironment(
+  static const String _defaultProxyUrl =
+      'https://asia-northeast1-fishxtech-hackathon-teamd.cloudfunctions.net/ishikawaOpenDataProxy';
+
+  static String get _defaultApiUrl => kIsWeb ? _defaultProxyUrl : _defaultDirectCsvUrl;
+
+  static const String _configuredApiUrl = String.fromEnvironment(
     'ISHIKAWA_OPEN_DATA_URL',
-    defaultValue: _defaultApiUrl,
+    defaultValue: '',
   );
+
+  static String get _apiUrl =>
+      _configuredApiUrl.isNotEmpty ? _configuredApiUrl : _defaultApiUrl;
 
   static const String _assetPath =
       'assets/data/ishikawa_fishing_open_data.json';
@@ -24,17 +33,37 @@ class FishingOpenDataService {
       return _cache!;
     }
 
+    Object? apiError;
     try {
       if (_apiUrl.isNotEmpty) {
         final apiData = await _loadFromApi(_apiUrl);
         _cache = apiData;
         return _cache!;
       }
-    } catch (_) {}
+    } catch (error) {
+      apiError = error;
+    }
 
     final assetData = await _loadFromAsset();
-    _cache = assetData;
+    _cache = IshikawaFishingOpenData(
+      datasetName: assetData.datasetName,
+      source: _fallbackSourceLabel(apiError),
+      observedMonth: assetData.observedMonth,
+      spots: assetData.spots,
+    );
     return _cache!;
+  }
+
+  String _fallbackSourceLabel(Object? apiError) {
+    if (apiError == null) {
+      return 'ローカル同梱データ（assets/data）';
+    }
+
+    if (kIsWeb) {
+      return 'ローカル同梱データ（Webでプロキシ経由取得失敗）';
+    }
+
+    return 'ローカル同梱データ（公式API取得失敗時フォールバック）';
   }
 
   Future<IshikawaFishingOpenData> _loadFromAsset() async {
@@ -128,6 +157,8 @@ class FishingOpenDataService {
       throw Exception('No usable fish data in CSV');
     }
 
+    _fillMissingSpotsWithEstimatedData(spotFish, spotTotal);
+
     final spots = spotFish.entries
         .map(
           (entry) => SpotFishingOpenData(
@@ -144,6 +175,50 @@ class FishingOpenDataService {
       observedMonth: latestYear > 0 ? latestYear.toString() : '',
       spots: spots,
     );
+  }
+
+  void _fillMissingSpotsWithEstimatedData(
+    Map<String, Map<String, int>> spotFish,
+    Map<String, int> spotTotal,
+  ) {
+    final globalFish = <String, int>{};
+    for (final fishMap in spotFish.values) {
+      fishMap.forEach((fish, amount) {
+        globalFish[fish] = (globalFish[fish] ?? 0) + amount;
+      });
+    }
+
+    final averageTotal = spotTotal.isEmpty
+        ? 100
+        : (spotTotal.values.reduce((a, b) => a + b) / spotTotal.length)
+            .round();
+
+    for (final baseSpot in IshikawaFishingSpots.all) {
+      if (spotFish.containsKey(baseSpot.id)) {
+        continue;
+      }
+
+      final estimatedFish = <String, int>{};
+      for (final fish in baseSpot.fishCandidates) {
+        final amount = globalFish[fish];
+        if (amount != null && amount > 0) {
+          estimatedFish[fish] = amount;
+        }
+      }
+
+      if (estimatedFish.isEmpty) {
+        var seed = 120;
+        for (final fish in baseSpot.fishCandidates) {
+          estimatedFish[fish] = seed;
+          seed = seed > 40 ? seed - 25 : 40;
+        }
+      }
+
+      final estimatedTotal = estimatedFish.values.fold<int>(0, (sum, v) => sum + v);
+
+      spotFish[baseSpot.id] = estimatedFish;
+      spotTotal[baseSpot.id] = estimatedTotal > 0 ? estimatedTotal : averageTotal;
+    }
   }
 
   int _findHeaderIndex(List<String> header, List<String> candidates) {

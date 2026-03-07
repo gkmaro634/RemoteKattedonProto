@@ -137,13 +137,33 @@ flutter run
 石川釣りゲームは、`flutter run` だけでデフォルトAPIへ自動接続します。  
 API取得に失敗した場合は `assets/data/ishikawa_fishing_open_data.json` に自動フォールバックします。
 
-デフォルト接続先（石川県公式オープンデータCSV）：
+デフォルト接続先（Web）：
+
+```text
+https://asia-northeast1-fishxtech-hackathon-teamd.cloudfunctions.net/ishikawaOpenDataProxy
+```
+
+デフォルト接続先（Web以外）：
 
 ```text
 https://ckan.opendata.pref.ishikawa.lg.jp/dataset/b9e71183-5d58-4aa3-8a52-6c436993fa2e/resource/3a8105cc-4b7e-40b5-aa99-ca614d0fa32f/download/catch_amount_type.csv
 ```
 
 `ISHIKAWA_OPEN_DATA_URL` を指定すると、接続先を上書きできます。
+
+### CORS対応プロキシのデプロイ
+
+```bash
+# Functions 依存インストール
+cd functions
+npm install
+cd ..
+
+# Hosting + Functions をデプロイ
+firebase deploy --only functions,hosting
+```
+
+Hosting rewrite により、公開サイト上では `/api/ishikawa-open-data` も同一オリジンで利用できます。
 
 ```bash
 # 実APIを使って起動（Web）
