@@ -165,6 +165,32 @@ firebase deploy --only functions,hosting
 
 Hosting rewrite により、公開サイト上では `/api/ishikawa-open-data` も同一オリジンで利用できます。
 
+### チーム向けローカル検証（課金なし・共通手順）
+
+全員同じ手順で確認できるよう、ローカル用FirebaseプロジェクトIDを固定して実行します（実在プロジェクト不要）。
+
+1. 依存をインストール（初回のみ）
+
+```bash
+make functions-install
+```
+
+2. Terminal A: Functionsエミュレータ起動
+
+```bash
+make proxy-emulator
+```
+
+3. Terminal B: Flutter Web起動（ローカルプロキシ経由）
+
+```bash
+make run-open-data-local
+```
+
+4. 確認ポイント
+- 取得元に `127.0.0.1:5001/.../ishikawaOpenDataProxy` が表示される
+- 漁場選択後に「漁獲生データ可視化」カードが表示される
+
 ```bash
 # 実APIを使って起動（Web）
 flutter run -d web --dart-define=ISHIKAWA_OPEN_DATA_URL=https://example.com/ishikawa/fishing.json
