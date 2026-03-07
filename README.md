@@ -132,6 +132,48 @@ flutter run -d web
 flutter run
 ```
 
+## 石川釣りゲームのオープンデータ（実API）設定
+
+石川釣りゲームは、`flutter run` だけでデフォルトAPIへ自動接続します。  
+API取得に失敗した場合は `assets/data/ishikawa_fishing_open_data.json` に自動フォールバックします。
+
+デフォルト接続先（石川県公式オープンデータCSV）：
+
+```text
+https://ckan.opendata.pref.ishikawa.lg.jp/dataset/b9e71183-5d58-4aa3-8a52-6c436993fa2e/resource/3a8105cc-4b7e-40b5-aa99-ca614d0fa32f/download/catch_amount_type.csv
+```
+
+`ISHIKAWA_OPEN_DATA_URL` を指定すると、接続先を上書きできます。
+
+```bash
+# 実APIを使って起動（Web）
+flutter run -d web --dart-define=ISHIKAWA_OPEN_DATA_URL=https://example.com/ishikawa/fishing.json
+
+# モバイル/デスクトップでも同様
+flutter run --dart-define=ISHIKAWA_OPEN_DATA_URL=https://example.com/ishikawa/fishing.json
+```
+
+### APIで受け付けるJSON形式
+
+1. 直接形式（推奨）
+```json
+{
+  "datasetName": "...",
+  "source": "...",
+  "observedMonth": "2026-02",
+  "spots": [
+    {
+      "spotId": "noto_north",
+      "totalCatchKg": 1240,
+      "fishCatchKg": { "のどぐろ": 320, "メバル": 290 }
+    }
+  ]
+}
+```
+
+2. `result.records` 形式（CKAN互換）
+- レコード内のキーは `spotId / spot_id`, `totalCatchKg / total_catch_kg`, `fishCatchKg / fish_catch_kg` をサポート
+
 ## Build & Deploy
 
 ### Web版

@@ -58,27 +58,37 @@ class _FishingInIshikawaGameScreenState extends State<FishingInIshikawaGameScree
   }
 
   Future<void> _loadOpenData() async {
-    final data = await _openDataService.load();
-    final spotData = data.bySpotId(widget.spot.id);
+    try {
+      final data = await _openDataService.load();
+      final spotData = data.bySpotId(widget.spot.id);
 
-    if (!mounted) {
-      return;
-    }
-
-    if (spotData == null) {
-      setState(() {
-        _openDataLabel = 'オープンデータ: 対象データなし';
-      });
-      return;
-    }
-
-    setState(() {
-      _currentSpot = widget.spot.withOpenData(spotData);
-      _openDataLabel = 'オープンデータ対象月: ${data.observedMonth}';
-      if (_phase == FishingPhase.waiting) {
-        _message = '${_currentSpot.name}で「投げる」を押して釣りを始めよう';
+      if (!mounted) {
+        return;
       }
-    });
+
+      if (spotData == null) {
+        setState(() {
+          _openDataLabel = 'オープンデータ: 対象データなし';
+        });
+        return;
+      }
+
+      setState(() {
+        _currentSpot = widget.spot.withOpenData(spotData);
+        _openDataLabel =
+            '対象月: ${data.observedMonth} / 取得元: ${data.source}';
+        if (_phase == FishingPhase.waiting) {
+          _message = '${_currentSpot.name}で「投げる」を押して釣りを始めよう';
+        }
+      });
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _openDataLabel = 'オープンデータの取得に失敗しました';
+      });
+    }
   }
 
   List<Color> _skyColors(ColorScheme colorScheme) {

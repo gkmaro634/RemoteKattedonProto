@@ -180,7 +180,9 @@ class _FishingInIshikawaStartScreenState
                       child: ListTile(
                         leading: const Icon(Icons.dataset),
                         title: Text(_openData!.datasetName),
-                        subtitle: Text('対象月: ${_openData!.observedMonth}'),
+                        subtitle: Text(
+                          '対象月: ${_openData!.observedMonth}\n取得元: ${_openData!.source}',
+                        ),
                       ),
                     ),
                   if (_openDataError != null)
