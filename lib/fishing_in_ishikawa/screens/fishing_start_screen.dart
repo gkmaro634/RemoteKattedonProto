@@ -175,6 +175,8 @@ class _FishingInIshikawaStartScreenState
                       ),
                     ),
                   ),
+                  if (_selectedSpot.fishWeights.isNotEmpty)
+                    _OpenDataVisualizationCard(spot: _selectedSpot),
                   if (_openData != null)
                     Card(
                       child: ListTile(
@@ -214,6 +216,95 @@ class _FishingInIshikawaStartScreenState
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _OpenDataVisualizationCard extends StatelessWidget {
+  final FishingSpot spot;
+
+  const _OpenDataVisualizationCard({
+    required this.spot,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final sorted = spot.fishWeights.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+
+    final topItems = sorted.take(6).toList();
+    final total = sorted.fold<int>(0, (sum, e) => sum + e.value);
+    final maxValue = topItems.isEmpty
+        ? 1
+        : topItems.fold<int>(0, (max, e) => e.value > max ? e.value : max);
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(AppConstants.defaultPadding),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.bar_chart),
+                const SizedBox(width: AppConstants.smallPadding),
+                Text(
+                  '漁獲生データ可視化（$spot.name）',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ],
+            ),
+            const SizedBox(height: AppConstants.smallPadding),
+            Text('合計: $total  / 上位${topItems.length}魚種を表示'),
+            const SizedBox(height: AppConstants.defaultPadding),
+            for (final item in topItems)
+              _FishAmountBarRow(
+                fishName: item.key,
+                amount: item.value,
+                maxAmount: maxValue,
+                total: total,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _FishAmountBarRow extends StatelessWidget {
+  final String fishName;
+  final int amount;
+  final int maxAmount;
+  final int total;
+
+  const _FishAmountBarRow({
+    required this.fishName,
+    required this.amount,
+    required this.maxAmount,
+    required this.total,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final ratio = total <= 0 ? 0.0 : (amount / total);
+    final barValue = maxAmount <= 0 ? 0.0 : (amount / maxAmount);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppConstants.smallPadding),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(fishName),
+              Text('$amount (${(ratio * 100).toStringAsFixed(1)}%)'),
+            ],
+          ),
+          const SizedBox(height: 4),
+          LinearProgressIndicator(value: barValue),
+        ],
       ),
     );
   }
