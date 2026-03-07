@@ -198,13 +198,7 @@ class FishingOpenDataService {
         continue;
       }
 
-      final estimatedFish = <String, int>{};
-      for (final fish in baseSpot.fishCandidates) {
-        final amount = globalFish[fish];
-        if (amount != null && amount > 0) {
-          estimatedFish[fish] = amount;
-        }
-      }
+      final estimatedFish = _estimateSpotFishFromGlobal(baseSpot, globalFish);
 
       if (estimatedFish.isEmpty) {
         var seed = 120;
@@ -218,6 +212,68 @@ class FishingOpenDataService {
 
       spotFish[baseSpot.id] = estimatedFish;
       spotTotal[baseSpot.id] = estimatedTotal > 0 ? estimatedTotal : averageTotal;
+    }
+  }
+
+  Map<String, int> _estimateSpotFishFromGlobal(
+    FishingSpot baseSpot,
+    Map<String, int> globalFish,
+  ) {
+    final result = <String, int>{};
+
+    for (var i = 0; i < baseSpot.fishCandidates.length; i++) {
+      final fish = baseSpot.fishCandidates[i];
+      final baseAmount = globalFish[fish] ?? 0;
+      if (baseAmount <= 0) {
+        continue;
+      }
+
+      // Candidate order reflects each spot's typical species priority.
+      final rankFactor = 1.15 - (i * 0.12);
+      final regionalBias = _regionalFishBias(baseSpot.id, fish);
+      final estimated = (baseAmount * rankFactor * regionalBias).round();
+
+      if (estimated > 0) {
+        result[fish] = estimated;
+      }
+    }
+
+    return result;
+  }
+
+  double _regionalFishBias(String spotId, String fish) {
+    switch (spotId) {
+      case 'kaga_offshore':
+        if (fish == 'のどぐろ' || fish == 'ゲンゲ') {
+          return 1.25;
+        }
+        if (fish == 'アジ') {
+          return 0.9;
+        }
+        return 1.0;
+      case 'kanazawa_port':
+        if (fish == 'シーバス' || fish == 'クロダイ') {
+          return 1.2;
+        }
+        if (fish == 'のどぐろ') {
+          return 0.8;
+        }
+        return 1.0;
+      case 'nanao_bay':
+        if (fish == 'メバル' || fish == 'アジ') {
+          return 1.18;
+        }
+        if (fish == 'シーバス') {
+          return 0.92;
+        }
+        return 1.0;
+      case 'noto_north':
+        if (fish == 'のどぐろ' || fish == 'カサゴ') {
+          return 1.2;
+        }
+        return 1.0;
+      default:
+        return 1.0;
     }
   }
 

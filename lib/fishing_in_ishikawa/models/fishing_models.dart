@@ -52,13 +52,17 @@ class FishingSpot {
     final sortedFish = data.fishCatchKg.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
 
+    final mergedCandidates = sortedFish.isEmpty
+        ? List<String>.from(fishCandidates)
+        : sortedFish.map((entry) => entry.key).toList();
+
     return FishingSpot(
       id: id,
       name: name,
       sceneryName: sceneryName,
       mapXFactor: mapXFactor,
       mapYFactor: mapYFactor,
-      fishCandidates: sortedFish.map((entry) => entry.key).toList(),
+      fishCandidates: mergedCandidates,
       fishWeights: data.fishCatchKg,
       totalCatchKg: data.totalCatchKg,
     );
@@ -66,7 +70,7 @@ class FishingSpot {
 
   String get topFish {
     if (fishWeights.isEmpty) {
-      return fishCandidates.first;
+      return fishCandidates.isNotEmpty ? fishCandidates.first : 'データなし';
     }
     final sorted = fishWeights.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
@@ -75,11 +79,17 @@ class FishingSpot {
 
   String pickFish(Random random) {
     if (fishWeights.isEmpty) {
+      if (fishCandidates.isEmpty) {
+        return '魚';
+      }
       return fishCandidates[random.nextInt(fishCandidates.length)];
     }
 
     final totalWeight = fishWeights.values.fold<int>(0, (sum, w) => sum + w);
     if (totalWeight <= 0) {
+      if (fishCandidates.isEmpty) {
+        return '魚';
+      }
       return fishCandidates[random.nextInt(fishCandidates.length)];
     }
 
@@ -91,7 +101,7 @@ class FishingSpot {
       }
     }
 
-    return fishCandidates.first;
+    return fishCandidates.isNotEmpty ? fishCandidates.first : '魚';
   }
 }
 
