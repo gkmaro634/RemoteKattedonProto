@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:remote_kattedon/core/constants/app_constants.dart';
+import 'package:remote_kattedon/fishing_in_ishikawa/models/fishing_models.dart';
 
 enum FishingPhase {
   waiting,
@@ -12,7 +13,12 @@ enum FishingPhase {
 }
 
 class FishingInIshikawaGameScreen extends StatefulWidget {
-  const FishingInIshikawaGameScreen({super.key});
+  final FishingSpot spot;
+
+  const FishingInIshikawaGameScreen({
+    super.key,
+    required this.spot,
+  });
 
   @override
   State<FishingInIshikawaGameScreen> createState() =>
@@ -24,7 +30,7 @@ class _FishingInIshikawaGameScreenState extends State<FishingInIshikawaGameScree
   final Random _random = Random();
 
   FishingPhase _phase = FishingPhase.waiting;
-  String _message = '「投げる」を押して釣りを始めよう';
+  late String _message;
   int _score = 0;
   int _combo = 0;
   int _remainingBiteSeconds = 0;
@@ -38,10 +44,41 @@ class _FishingInIshikawaGameScreenState extends State<FishingInIshikawaGameScree
   @override
   void initState() {
     super.initState();
+    _message = '${widget.spot.name}で「投げる」を押して釣りを始めよう';
     _swimController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 7),
     )..repeat(reverse: true);
+  }
+
+  List<Color> _skyColors(ColorScheme colorScheme) {
+    switch (widget.spot.id) {
+      case 'noto_north':
+        return [
+          colorScheme.primaryContainer,
+          colorScheme.primary.withValues(alpha: 0.9),
+        ];
+      case 'nanao_bay':
+        return [
+          colorScheme.tertiaryContainer,
+          colorScheme.primaryContainer,
+        ];
+      case 'kanazawa_port':
+        return [
+          colorScheme.surfaceContainerHighest,
+          colorScheme.primary,
+        ];
+      case 'kaga_offshore':
+        return [
+          colorScheme.secondaryContainer,
+          colorScheme.secondary,
+        ];
+      default:
+        return [
+          colorScheme.primaryContainer,
+          colorScheme.primary.withValues(alpha: 0.9),
+        ];
+    }
   }
 
   @override
@@ -109,7 +146,7 @@ class _FishingInIshikawaGameScreenState extends State<FishingInIshikawaGameScree
     }
 
     _cancelTimers();
-    final fishNames = ['アジ', 'メバル', 'クロダイ', 'シーバス', 'カサゴ', 'ゲンゲ', 'のどぐろ'];
+    final fishNames = widget.spot.fishCandidates;
     final fish = fishNames[_random.nextInt(fishNames.length)];
 
     setState(() {
@@ -133,7 +170,7 @@ class _FishingInIshikawaGameScreenState extends State<FishingInIshikawaGameScree
     _cancelTimers();
     setState(() {
       _phase = FishingPhase.waiting;
-      _message = '「投げる」を押して釣りを始めよう';
+      _message = '${widget.spot.name}で「投げる」を押して釣りを始めよう';
       _score = 0;
       _combo = 0;
     });
@@ -142,19 +179,34 @@ class _FishingInIshikawaGameScreenState extends State<FishingInIshikawaGameScree
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final skyColors = _skyColors(colorScheme);
     final canCast =
         _phase == FishingPhase.waiting || _phase == FishingPhase.result;
     final canHook = _phase == FishingPhase.biteWindow;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Fishing in ISHIKAWA'),
+        title: Text('Fishing in ISHIKAWA - ${widget.spot.name}'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(AppConstants.largePadding),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(AppConstants.defaultPadding),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.landscape),
+                    const SizedBox(width: AppConstants.smallPadding),
+                    Text('景色: ${widget.spot.sceneryName}'),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: AppConstants.smallPadding),
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(AppConstants.defaultPadding),
@@ -206,10 +258,7 @@ class _FishingInIshikawaGameScreenState extends State<FishingInIshikawaGameScree
                                   gradient: LinearGradient(
                                     begin: Alignment.topCenter,
                                     end: Alignment.bottomCenter,
-                                    colors: [
-                                      colorScheme.primaryContainer,
-                                      colorScheme.primary.withOpacity(0.9),
-                                    ],
+                                    colors: skyColors,
                                   ),
                                 ),
                               ),
@@ -219,7 +268,7 @@ class _FishingInIshikawaGameScreenState extends State<FishingInIshikawaGameScree
                               left: 24,
                               child: Icon(
                                 Icons.cloud,
-                                color: Colors.white.withOpacity(0.85),
+                                color: Colors.white.withValues(alpha: 0.85),
                                 size: 40,
                               ),
                             ),
@@ -228,7 +277,7 @@ class _FishingInIshikawaGameScreenState extends State<FishingInIshikawaGameScree
                               right: 28,
                               child: Icon(
                                 Icons.cloud,
-                                color: Colors.white.withOpacity(0.75),
+                                color: Colors.white.withValues(alpha: 0.75),
                                 size: 32,
                               ),
                             ),
@@ -244,8 +293,8 @@ class _FishingInIshikawaGameScreenState extends State<FishingInIshikawaGameScree
                                     end: Alignment.bottomCenter,
                                     colors: [
                                       colorScheme.secondaryContainer
-                                          .withOpacity(0.7),
-                                      colorScheme.secondary.withOpacity(0.95),
+                                          .withValues(alpha: 0.7),
+                                      colorScheme.secondary.withValues(alpha: 0.95),
                                     ],
                                   ),
                                 ),
@@ -256,7 +305,7 @@ class _FishingInIshikawaGameScreenState extends State<FishingInIshikawaGameScree
                               bottom: 56,
                               child: Icon(
                                 Icons.set_meal,
-                                color: Colors.white.withOpacity(0.8),
+                                color: Colors.white.withValues(alpha: 0.8),
                                 size: 32,
                               ),
                             ),
@@ -268,7 +317,7 @@ class _FishingInIshikawaGameScreenState extends State<FishingInIshikawaGameScree
                                 transform: Matrix4.identity()..scale(-1.0, 1.0),
                                 child: Icon(
                                   Icons.set_meal,
-                                  color: Colors.white.withOpacity(0.68),
+                                  color: Colors.white.withValues(alpha: 0.68),
                                   size: 28,
                                 ),
                               ),
@@ -292,7 +341,7 @@ class _FishingInIshikawaGameScreenState extends State<FishingInIshikawaGameScree
                                   AppConstants.defaultPadding,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: colorScheme.surface.withOpacity(0.85),
+                                  color: colorScheme.surface.withValues(alpha: 0.85),
                                   borderRadius: BorderRadius.circular(
                                     AppConstants.cardBorderRadius,
                                   ),
