@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:remote_kattedon/core/theme/app_theme.dart';
 import 'package:remote_kattedon/core/constants/app_constants.dart';
 import 'package:remote_kattedon/fishing_in_ishikawa/models/fishing_models.dart';
+import 'package:remote_kattedon/fishing_in_ishikawa/services/open_data_service.dart';
 import 'package:remote_kattedon/widgets/common_widgets.dart';
 import 'package:remote_kattedon/navigation/route_names.dart';
 
@@ -16,7 +17,46 @@ class FishingInIshikawaStartScreen extends StatefulWidget {
 
 class _FishingInIshikawaStartScreenState
     extends State<FishingInIshikawaStartScreen> {
+  final FishingOpenDataService _openDataService = FishingOpenDataService();
+
   FishingSpot _selectedSpot = IshikawaFishingSpots.all.first;
+  IshikawaFishingOpenData? _openData;
+  String? _openDataError;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadOpenData();
+  }
+
+  Future<void> _loadOpenData() async {
+    try {
+      final data = await _openDataService.load();
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _openData = data;
+        _selectedSpot = _enrichedSpot(_selectedSpot);
+      });
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _openDataError = 'オープンデータの読み込みに失敗しました';
+      });
+    }
+  }
+
+  FishingSpot _enrichedSpot(FishingSpot baseSpot) {
+    final spotData = _openData?.bySpotId(baseSpot.id);
+    if (spotData == null) {
+      return baseSpot;
+    }
+    return baseSpot.withOpenData(spotData);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -79,7 +119,7 @@ class _FishingInIshikawaStartScreenState
                                       borderRadius: BorderRadius.circular(24),
                                       onTap: () {
                                         setState(() {
-                                          _selectedSpot = spot;
+                                          _selectedSpot = _enrichedSpot(spot);
                                         });
                                       },
                                       child: Column(
@@ -127,9 +167,30 @@ class _FishingInIshikawaStartScreenState
                     child: ListTile(
                       leading: const Icon(Icons.landscape),
                       title: Text(_selectedSpot.name),
-                      subtitle: Text('景色: ${_selectedSpot.sceneryName}'),
+                      subtitle: Text(
+                        _selectedSpot.totalCatchKg == null
+                            ? '景色: ${_selectedSpot.sceneryName}'
+                            : '景色: ${_selectedSpot.sceneryName}\n'
+                                '推定漁獲量: ${_selectedSpot.totalCatchKg}kg / 月  主な魚: ${_selectedSpot.topFish}',
+                      ),
                     ),
                   ),
+                  if (_openData != null)
+                    Card(
+                      child: ListTile(
+                        leading: const Icon(Icons.dataset),
+                        title: Text(_openData!.datasetName),
+                        subtitle: Text('対象月: ${_openData!.observedMonth}'),
+                      ),
+                    ),
+                  if (_openDataError != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: AppConstants.smallPadding),
+                      child: Text(
+                        _openDataError!,
+                        style: TextStyle(color: colorScheme.error),
+                      ),
+                    ),
                   const SizedBox(height: AppConstants.largePadding * 1.5),
 
                   GameStartButton(

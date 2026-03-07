@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:remote_kattedon/core/constants/app_constants.dart';
 import 'package:remote_kattedon/fishing_in_ishikawa/models/fishing_models.dart';
+import 'package:remote_kattedon/fishing_in_ishikawa/services/open_data_service.dart';
 
 enum FishingPhase {
   waiting,
@@ -28,9 +29,12 @@ class FishingInIshikawaGameScreen extends StatefulWidget {
 class _FishingInIshikawaGameScreenState extends State<FishingInIshikawaGameScreen>
     with SingleTickerProviderStateMixin {
   final Random _random = Random();
+  final FishingOpenDataService _openDataService = FishingOpenDataService();
 
   FishingPhase _phase = FishingPhase.waiting;
   late String _message;
+  late FishingSpot _currentSpot;
+  String? _openDataLabel;
   int _score = 0;
   int _combo = 0;
   int _remainingBiteSeconds = 0;
@@ -44,15 +48,41 @@ class _FishingInIshikawaGameScreenState extends State<FishingInIshikawaGameScree
   @override
   void initState() {
     super.initState();
-    _message = '${widget.spot.name}で「投げる」を押して釣りを始めよう';
+    _currentSpot = widget.spot;
+    _message = '${_currentSpot.name}で「投げる」を押して釣りを始めよう';
     _swimController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 7),
     )..repeat(reverse: true);
+    _loadOpenData();
+  }
+
+  Future<void> _loadOpenData() async {
+    final data = await _openDataService.load();
+    final spotData = data.bySpotId(widget.spot.id);
+
+    if (!mounted) {
+      return;
+    }
+
+    if (spotData == null) {
+      setState(() {
+        _openDataLabel = 'オープンデータ: 対象データなし';
+      });
+      return;
+    }
+
+    setState(() {
+      _currentSpot = widget.spot.withOpenData(spotData);
+      _openDataLabel = 'オープンデータ対象月: ${data.observedMonth}';
+      if (_phase == FishingPhase.waiting) {
+        _message = '${_currentSpot.name}で「投げる」を押して釣りを始めよう';
+      }
+    });
   }
 
   List<Color> _skyColors(ColorScheme colorScheme) {
-    switch (widget.spot.id) {
+    switch (_currentSpot.id) {
       case 'noto_north':
         return [
           colorScheme.primaryContainer,
@@ -146,8 +176,7 @@ class _FishingInIshikawaGameScreenState extends State<FishingInIshikawaGameScree
     }
 
     _cancelTimers();
-    final fishNames = widget.spot.fishCandidates;
-    final fish = fishNames[_random.nextInt(fishNames.length)];
+    final fish = _currentSpot.pickFish(_random);
 
     setState(() {
       _score += 10 + (_combo * 2);
@@ -170,7 +199,7 @@ class _FishingInIshikawaGameScreenState extends State<FishingInIshikawaGameScree
     _cancelTimers();
     setState(() {
       _phase = FishingPhase.waiting;
-      _message = '${widget.spot.name}で「投げる」を押して釣りを始めよう';
+      _message = '${_currentSpot.name}で「投げる」を押して釣りを始めよう';
       _score = 0;
       _combo = 0;
     });
@@ -186,7 +215,7 @@ class _FishingInIshikawaGameScreenState extends State<FishingInIshikawaGameScree
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Fishing in ISHIKAWA - ${widget.spot.name}'),
+        title: Text('Fishing in ISHIKAWA - ${_currentSpot.name}'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(AppConstants.largePadding),
@@ -201,11 +230,33 @@ class _FishingInIshikawaGameScreenState extends State<FishingInIshikawaGameScree
                   children: [
                     const Icon(Icons.landscape),
                     const SizedBox(width: AppConstants.smallPadding),
-                    Text('景色: ${widget.spot.sceneryName}'),
+                    Text('景色: ${_currentSpot.sceneryName}'),
                   ],
                 ),
               ),
             ),
+            if (_currentSpot.totalCatchKg != null)
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(AppConstants.defaultPadding),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('推定漁獲量: ${_currentSpot.totalCatchKg}kg / 月'),
+                      Text('主な魚: ${_currentSpot.topFish}'),
+                    ],
+                  ),
+                ),
+              ),
+            if (_openDataLabel != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: AppConstants.smallPadding),
+                child: Text(
+                  _openDataLabel!,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ),
             const SizedBox(height: AppConstants.smallPadding),
             Card(
               child: Padding(

@@ -30,6 +30,7 @@ flutter:
     - assets/images/genge/
     - assets/images/bora/
     - assets/images/icons/
+    - assets/data/
     - assets/audio/deshelling_crab/
     - assets/audio/genge/
 

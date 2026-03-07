@@ -1,3 +1,5 @@
+import 'dart:math';
+
 // 石川釣りゲームのモデル定義（実装用プレースホルダー）
 
 class FishingInIshikawaGameState {
@@ -32,6 +34,8 @@ class FishingSpot {
   final double mapXFactor;
   final double mapYFactor;
   final List<String> fishCandidates;
+  final Map<String, int> fishWeights;
+  final int? totalCatchKg;
 
   const FishingSpot({
     required this.id,
@@ -40,7 +44,113 @@ class FishingSpot {
     required this.mapXFactor,
     required this.mapYFactor,
     required this.fishCandidates,
+    this.fishWeights = const {},
+    this.totalCatchKg,
   });
+
+  FishingSpot withOpenData(SpotFishingOpenData data) {
+    final sortedFish = data.fishCatchKg.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+
+    return FishingSpot(
+      id: id,
+      name: name,
+      sceneryName: sceneryName,
+      mapXFactor: mapXFactor,
+      mapYFactor: mapYFactor,
+      fishCandidates: sortedFish.map((entry) => entry.key).toList(),
+      fishWeights: data.fishCatchKg,
+      totalCatchKg: data.totalCatchKg,
+    );
+  }
+
+  String get topFish {
+    if (fishWeights.isEmpty) {
+      return fishCandidates.first;
+    }
+    final sorted = fishWeights.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    return sorted.first.key;
+  }
+
+  String pickFish(Random random) {
+    if (fishWeights.isEmpty) {
+      return fishCandidates[random.nextInt(fishCandidates.length)];
+    }
+
+    final totalWeight = fishWeights.values.fold<int>(0, (sum, w) => sum + w);
+    if (totalWeight <= 0) {
+      return fishCandidates[random.nextInt(fishCandidates.length)];
+    }
+
+    var target = random.nextInt(totalWeight);
+    for (final entry in fishWeights.entries) {
+      target -= entry.value;
+      if (target < 0) {
+        return entry.key;
+      }
+    }
+
+    return fishCandidates.first;
+  }
+}
+
+class SpotFishingOpenData {
+  final String spotId;
+  final int totalCatchKg;
+  final Map<String, int> fishCatchKg;
+
+  const SpotFishingOpenData({
+    required this.spotId,
+    required this.totalCatchKg,
+    required this.fishCatchKg,
+  });
+
+  factory SpotFishingOpenData.fromJson(Map<String, dynamic> json) {
+    final fishCatch = Map<String, dynamic>.from(json['fishCatchKg'] as Map);
+    return SpotFishingOpenData(
+      spotId: json['spotId'] as String,
+      totalCatchKg: (json['totalCatchKg'] as num).round(),
+      fishCatchKg: fishCatch.map(
+        (key, value) => MapEntry(key, (value as num).round()),
+      ),
+    );
+  }
+}
+
+class IshikawaFishingOpenData {
+  final String datasetName;
+  final String source;
+  final String observedMonth;
+  final List<SpotFishingOpenData> spots;
+
+  const IshikawaFishingOpenData({
+    required this.datasetName,
+    required this.source,
+    required this.observedMonth,
+    required this.spots,
+  });
+
+  factory IshikawaFishingOpenData.fromJson(Map<String, dynamic> json) {
+    final spotsJson = (json['spots'] as List<dynamic>)
+        .cast<Map<String, dynamic>>();
+
+    return IshikawaFishingOpenData(
+      datasetName: json['datasetName'] as String,
+      source: json['source'] as String,
+      observedMonth: json['observedMonth'] as String,
+      spots: spotsJson.map(SpotFishingOpenData.fromJson).toList(),
+    );
+  }
+
+  SpotFishingOpenData? bySpotId(String spotId) {
+    for (final spot in spots) {
+      if (spot.spotId == spotId) {
+        return spot;
+      }
+    }
+    return null;
+  }
 }
 
 class IshikawaFishingSpots {
