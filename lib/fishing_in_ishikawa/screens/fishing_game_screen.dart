@@ -382,6 +382,12 @@ class _FishingInIshikawaGameScreenState extends State<FishingInIshikawaGameScree
     return _score + futurePerfect;
   }
 
+  bool get _isGameOver {
+    final inRound = _phase == FishingPhase.waitingForBite ||
+        _phase == FishingPhase.biteWindow;
+    return _baitRemaining <= 0 && !inRound;
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -458,6 +464,8 @@ class _FishingInIshikawaGameScreenState extends State<FishingInIshikawaGameScree
                             _HudChip(text: 'ベスト $_bestScore', icon: Icons.emoji_events),
                             _HudChip(text: 'コンボ $_combo', icon: Icons.bolt),
                             _HudChip(text: 'エサ $_baitRemaining/$_maxBait', icon: Icons.catching_pokemon),
+                            if (_isGameOver)
+                              _HudChip(text: 'ゲーム終了', icon: Icons.flag),
                             _HudChip(
                               text: '理論最高 ${_maxReachableScore()}',
                               icon: Icons.trending_up,
@@ -678,6 +686,43 @@ class _FishingInIshikawaGameScreenState extends State<FishingInIshikawaGameScree
                           ),
                         ),
                       ),
+                      if (_isGameOver)
+                        Positioned.fill(
+                          child: Container(
+                            color: Colors.black.withValues(alpha: 0.46),
+                            alignment: Alignment.center,
+                            child: Container(
+                              margin: const EdgeInsets.symmetric(horizontal: 24),
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: colorScheme.surface.withValues(alpha: 0.94),
+                                borderRadius: BorderRadius.circular(
+                                  AppConstants.cardBorderRadius,
+                                ),
+                              ),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    'GAME OVER',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .headlineSmall
+                                        ?.copyWith(fontWeight: FontWeight.w700),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text('最終スコア: $_score'),
+                                  Text('ベスト: $_bestScore'),
+                                  const SizedBox(height: 12),
+                                  FilledButton(
+                                    onPressed: _resetGame,
+                                    child: const Text('もう一度遊ぶ'),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
                     ],
                   );
                 },
