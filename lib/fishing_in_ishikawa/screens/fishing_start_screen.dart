@@ -21,14 +21,18 @@ class FishingInIshikawaStartScreen extends StatefulWidget {
 
 class _FishingInIshikawaStartScreenState
     extends State<FishingInIshikawaStartScreen> {
-  static const int _mapZoom = 7;
-  static const int _mapTileX = 112;
-  static const int _mapTileY = 49;
+  static const int _mapZoom = 8;
+  static const int _mapTileX = 224;
+  static const int _mapTileY = 99;
+  static const int _mapTileColumns = 2;
+  static const int _mapTileRows = 2;
   static const double _tileSize = 256.0;
   static const double _pinIconSize = 32.0;
+  static const double _pinWidgetWidth = 126.0;
+  static const double _pinWidgetHeight = 68.0;
 
-  static const String _ishikawaMapTileUrl =
-      'https://cyberjapandata.gsi.go.jp/xyz/std/7/112/49.png';
+  static String _tileUrl(int x, int y) =>
+      'https://cyberjapandata.gsi.go.jp/xyz/std/$_mapZoom/$x/$y.png';
 
   final FishingOpenDataService _openDataService = FishingOpenDataService();
 
@@ -84,6 +88,8 @@ class _FishingInIshikawaStartScreenState
 
   Offset _spotPositionInMap(FishingSpot spot, BoxConstraints constraints) {
     final worldSize = (1 << _mapZoom) * _tileSize;
+    final mapPixelWidth = _mapTileColumns * _tileSize;
+    final mapPixelHeight = _mapTileRows * _tileSize;
 
     final lonX = ((spot.longitude + 180.0) / 360.0) * worldSize;
     final latRad = spot.latitude * math.pi / 180.0;
@@ -98,16 +104,19 @@ class _FishingInIshikawaStartScreenState
     final yInTile = latY - tileTop;
 
     final scale = math.max(
-      constraints.maxWidth / _tileSize,
-      constraints.maxHeight / _tileSize,
+      0.0001,
+      math.min(
+        constraints.maxWidth / mapPixelWidth,
+        constraints.maxHeight / mapPixelHeight,
+      ),
     );
-    final renderedWidth = _tileSize * scale;
-    final renderedHeight = _tileSize * scale;
-    final cropLeft = (renderedWidth - constraints.maxWidth) / 2;
-    final cropTop = (renderedHeight - constraints.maxHeight) / 2;
+    final renderedWidth = mapPixelWidth * scale;
+    final renderedHeight = mapPixelHeight * scale;
+    final offsetLeft = (constraints.maxWidth - renderedWidth) / 2;
+    final offsetTop = (constraints.maxHeight - renderedHeight) / 2;
 
-    final x = (xInTile * scale) - cropLeft;
-    final y = (yInTile * scale) - cropTop;
+    final x = offsetLeft + (xInTile * scale);
+    final y = offsetTop + (yInTile * scale);
 
     return Offset(
       x.clamp(0.0, constraints.maxWidth),
@@ -173,17 +182,50 @@ class _FishingInIshikawaStartScreenState
                                     child: Stack(
                                       fit: StackFit.expand,
                                       children: [
-                                        Image.network(
-                                          _ishikawaMapTileUrl,
-                                          fit: BoxFit.cover,
-                                          errorBuilder: (context, error, stackTrace) {
-                                            return CustomPaint(
-                                              painter: _IshikawaMapPainter(
-                                                fillColor: colorScheme.surface,
-                                                strokeColor: colorScheme.primary,
-                                              ),
-                                            );
-                                          },
+                                        FittedBox(
+                                          fit: BoxFit.contain,
+                                          child: SizedBox(
+                                            width: _mapTileColumns * _tileSize,
+                                            height: _mapTileRows * _tileSize,
+                                            child: Stack(
+                                              children: [
+                                                for (var y = 0; y < _mapTileRows; y++)
+                                                  for (var x = 0;
+                                                      x < _mapTileColumns;
+                                                      x++)
+                                                    Positioned(
+                                                      left: x * _tileSize,
+                                                      top: y * _tileSize,
+                                                      width: _tileSize,
+                                                      height: _tileSize,
+                                                      child: Image.network(
+                                                        _tileUrl(
+                                                          _mapTileX + x,
+                                                          _mapTileY + y,
+                                                        ),
+                                                        fit: BoxFit.cover,
+                                                        errorBuilder: (
+                                                          context,
+                                                          error,
+                                                          stackTrace,
+                                                        ) {
+                                                          return CustomPaint(
+                                                            painter:
+                                                                _IshikawaMapPainter(
+                                                              fillColor:
+                                                                  colorScheme
+                                                                      .surface,
+                                                              strokeColor:
+                                                                  colorScheme
+                                                                      .primary,
+                                                            ),
+                                                          );
+                                                        },
+                                                      ),
+                                                    ),
+                                              ],
+                                            ),
+                                          ),
                                         ),
                                         DecoratedBox(
                                           decoration: BoxDecoration(
@@ -229,22 +271,57 @@ class _FishingInIshikawaStartScreenState
                                         spot,
                                         constraints,
                                       );
+                                      final isBottomArea = position.dy >
+                                          constraints.maxHeight - 56;
                                       final left =
-                                          (position.dx - (_pinIconSize / 2)).clamp(
+                                          (position.dx - (_pinWidgetWidth / 2)).clamp(
                                         0.0,
-                                        constraints.maxWidth - _pinIconSize,
+                                        constraints.maxWidth - _pinWidgetWidth,
                                       );
-                                      final top = (position.dy - _pinIconSize)
-                                          .clamp(
+                                      final rawTop = isBottomArea
+                                          ? position.dy - _pinWidgetHeight
+                                          : position.dy - 26;
+                                      final top = rawTop.clamp(
                                         0.0,
-                                        constraints.maxHeight - _pinIconSize,
+                                        constraints.maxHeight - _pinWidgetHeight,
                                       );
 
                                       return Positioned(
                                         left: left,
                                         top: top,
+                                        width: _pinWidgetWidth,
+                                        height: _pinWidgetHeight,
                                         child: Column(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
                                           children: [
+                                            if (isBottomArea)
+                                              IgnorePointer(
+                                                child: Container(
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                    horizontal: 8,
+                                                    vertical: 4,
+                                                  ),
+                                                  decoration: BoxDecoration(
+                                                    color: colorScheme.surface
+                                                        .withValues(alpha: 0.85),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                      999,
+                                                    ),
+                                                  ),
+                                                  child: Text(
+                                                    spot.name,
+                                                    maxLines: 1,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                    style: Theme.of(context)
+                                                        .textTheme
+                                                        .bodySmall,
+                                                  ),
+                                                ),
+                                              ),
                                             InkWell(
                                               borderRadius:
                                                   BorderRadius.circular(24),
@@ -267,30 +344,33 @@ class _FishingInIshikawaStartScreenState
                                                 ),
                                               ),
                                             ),
-                                            IgnorePointer(
-                                              child: Container(
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                  horizontal: 8,
-                                                  vertical: 4,
-                                                ),
-                                                decoration: BoxDecoration(
-                                                  color: colorScheme.surface
-                                                      .withValues(alpha: 0.85),
-                                                  borderRadius:
-                                                      BorderRadius.circular(999),
-                                                ),
-                                                child: Text(
-                                                  spot.name,
-                                                  maxLines: 1,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                  style: Theme.of(context)
-                                                      .textTheme
-                                                      .bodySmall,
+                                            if (!isBottomArea)
+                                              IgnorePointer(
+                                                child: Container(
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                    horizontal: 8,
+                                                    vertical: 4,
+                                                  ),
+                                                  decoration: BoxDecoration(
+                                                    color: colorScheme.surface
+                                                        .withValues(alpha: 0.85),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                      999,
+                                                    ),
+                                                  ),
+                                                  child: Text(
+                                                    spot.name,
+                                                    maxLines: 1,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                    style: Theme.of(context)
+                                                        .textTheme
+                                                        .bodySmall,
+                                                  ),
                                                 ),
                                               ),
-                                            ),
                                           ],
                                         ),
                                       );
