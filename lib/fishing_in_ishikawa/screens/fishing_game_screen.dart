@@ -7,6 +7,7 @@ import 'package:remote_kattedon/core/constants/app_constants.dart';
 import 'package:remote_kattedon/fishing_in_ishikawa/models/fishing_models.dart';
 import 'package:remote_kattedon/fishing_in_ishikawa/services/open_data_service.dart';
 import 'package:remote_kattedon/fishing_in_ishikawa/services/scenic_photo_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 enum FishingPhase {
@@ -31,6 +32,9 @@ class FishingInIshikawaGameScreen extends StatefulWidget {
 
 class _FishingInIshikawaGameScreenState extends State<FishingInIshikawaGameScreen>
     with SingleTickerProviderStateMixin {
+  static const int _maxBait = 5;
+  static const String _bestScoreKey = 'fishing_ishikawa_best_score';
+
   final Random _random = Random();
   final FishingOpenDataService _openDataService = FishingOpenDataService();
   final ScenicPhotoService _scenicPhotoService = ScenicPhotoService();
@@ -43,13 +47,21 @@ class _FishingInIshikawaGameScreenState extends State<FishingInIshikawaGameScree
   List<ScenicPhoto> _scenicPhotos = const [];
   int _scenicPhotoIndex = 0;
   int _score = 0;
+  int _bestScore = 0;
   int _combo = 0;
+  int _baitRemaining = _maxBait;
   int _remainingBiteSeconds = 0;
   double _biteFishXFactor = 0.65;
   double _biteFishYFactor = 0.68;
+  double _hookMeter = 0.5;
+  double _hookTargetCenter = 0.5;
+  double _hookTargetWidth = 0.24;
+  int _hookCycleMs = 900;
+  int _hookElapsedMs = 0;
 
   Timer? _biteTimer;
   Timer? _countdownTimer;
+  Timer? _hookMeterTimer;
   Timer? _scenerySwitchTimer;
   late final AnimationController _swimController;
 
@@ -65,6 +77,37 @@ class _FishingInIshikawaGameScreenState extends State<FishingInIshikawaGameScree
     )..repeat(reverse: true);
     _loadOpenData();
     _loadSceneryPhoto();
+    _loadBestScore();
+  }
+
+  Future<void> _loadBestScore() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _bestScore = prefs.getInt(_bestScoreKey) ?? 0;
+    });
+  }
+
+  Future<void> _saveBestScoreIfNeeded() async {
+    if (_score <= _bestScore) {
+      return;
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_bestScoreKey, _score);
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _bestScore = _score;
+    });
+  }
+
+  void _updateScoreAndPersistBest(int gained) {
+    _score += gained;
+    _saveBestScoreIfNeeded();
   }
 
   Future<void> _loadSceneryPhoto() async {
@@ -200,6 +243,7 @@ class _FishingInIshikawaGameScreenState extends State<FishingInIshikawaGameScree
   void _cancelTimers() {
     _biteTimer?.cancel();
     _countdownTimer?.cancel();
+    _hookMeterTimer?.cancel();
   }
 
   void _castLine() {
@@ -208,11 +252,19 @@ class _FishingInIshikawaGameScreenState extends State<FishingInIshikawaGameScree
       return;
     }
 
+    if (_baitRemaining <= 0) {
+      setState(() {
+        _message = 'エサ切れ！ リセットして再挑戦しよう';
+      });
+      return;
+    }
+
     _cancelTimers();
     final waitSeconds = 2 + _random.nextInt(4);
     setState(() {
+      _baitRemaining--;
       _phase = FishingPhase.waitingForBite;
-      _message = '仕掛けを投入… 魚が来るまで待とう';
+      _message = '仕掛けを投入… 魚が来るまで待とう（エサ残り$_baitRemaining）';
     });
 
     _biteTimer = Timer(Duration(seconds: waitSeconds), _startBiteWindow);
@@ -223,12 +275,32 @@ class _FishingInIshikawaGameScreenState extends State<FishingInIshikawaGameScree
       return;
     }
 
-    _remainingBiteSeconds = 2;
+    _remainingBiteSeconds = 3;
+    _hookElapsedMs = 0;
+    _hookMeter = _random.nextDouble();
+    _hookTargetCenter = 0.2 + (_random.nextDouble() * 0.6);
+    _hookTargetWidth = (0.28 - (_combo * 0.012)).clamp(0.14, 0.28);
+    _hookCycleMs = (900 - (_combo * 22)).clamp(520, 900);
     setState(() {
       _biteFishXFactor = 0.2 + (_random.nextDouble() * 0.6);
       _biteFishYFactor = 0.52 + (_random.nextDouble() * 0.3);
       _phase = FishingPhase.biteWindow;
-      _message = 'アタリ！ 2秒以内に「釣る」！';
+      _message = 'アタリ！ 緑ゾーンで「釣る」！';
+    });
+
+    _hookMeterTimer = Timer.periodic(const Duration(milliseconds: 70), (timer) {
+      if (!mounted || _phase != FishingPhase.biteWindow) {
+        timer.cancel();
+        return;
+      }
+
+      _hookElapsedMs += 70;
+      final t = (_hookElapsedMs % _hookCycleMs) / _hookCycleMs;
+      final wave = t < 0.5 ? t * 2 : (1 - t) * 2;
+
+      setState(() {
+        _hookMeter = wave;
+      });
     });
 
     _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
@@ -243,7 +315,7 @@ class _FishingInIshikawaGameScreenState extends State<FishingInIshikawaGameScree
         _loseFish();
       } else {
         setState(() {
-          _message = 'アタリ！ 残り$_remainingBiteSeconds秒';
+          _message = 'アタリ！ 緑ゾーンで釣る（残り$_remainingBiteSeconds秒）';
         });
       }
     });
@@ -255,13 +327,31 @@ class _FishingInIshikawaGameScreenState extends State<FishingInIshikawaGameScree
     }
 
     _cancelTimers();
-    final fish = _currentSpot.pickFish(_random);
+    final inTarget =
+        (_hookMeter - _hookTargetCenter).abs() <= (_hookTargetWidth / 2);
 
+    if (!inTarget) {
+      final diff = _hookMeter - _hookTargetCenter;
+      setState(() {
+        _combo = 0;
+        _phase = FishingPhase.result;
+        _message = diff < 0
+            ? '合わせが早い！もう少し待とう'
+            : '合わせが遅い！次は早めに';
+      });
+      return;
+    }
+
+    final fish = _currentSpot.pickFish(_random);
+    final precision =
+        1 - ((_hookMeter - _hookTargetCenter).abs() / (_hookTargetWidth / 2));
+    final precisionBonus = (precision * 10).round();
+    final gained = 10 + (_combo * 2) + precisionBonus;
     setState(() {
-      _score += 10 + (_combo * 2);
+      _updateScoreAndPersistBest(gained);
       _combo++;
       _phase = FishingPhase.result;
-      _message = '$fish を釣り上げた！ +${10 + ((_combo - 1) * 2)}点';
+      _message = '$fish を釣り上げた！ +$gained点';
     });
   }
 
@@ -270,7 +360,7 @@ class _FishingInIshikawaGameScreenState extends State<FishingInIshikawaGameScree
     setState(() {
       _combo = 0;
       _phase = FishingPhase.result;
-      _message = '逃げられた… タイミングが遅かった';
+      _message = '逃げられた… タイミングを合わせよう';
     });
   }
 
@@ -281,7 +371,15 @@ class _FishingInIshikawaGameScreenState extends State<FishingInIshikawaGameScree
       _message = '${_currentSpot.name}で「投げる」を押して釣りを始めよう';
       _score = 0;
       _combo = 0;
+      _baitRemaining = _maxBait;
     });
+  }
+
+  int _maxReachableScore() {
+    final r = _baitRemaining;
+    final c = _combo;
+    final futurePerfect = (r * (20 + (2 * c))) + (r * (r - 1));
+    return _score + futurePerfect;
   }
 
   @override
@@ -357,7 +455,13 @@ class _FishingInIshikawaGameScreenState extends State<FishingInIshikawaGameScree
                           children: [
                             _HudChip(text: _currentSpot.name, icon: Icons.place),
                             _HudChip(text: 'スコア $_score', icon: Icons.stars),
+                            _HudChip(text: 'ベスト $_bestScore', icon: Icons.emoji_events),
                             _HudChip(text: 'コンボ $_combo', icon: Icons.bolt),
+                            _HudChip(text: 'エサ $_baitRemaining/$_maxBait', icon: Icons.catching_pokemon),
+                            _HudChip(
+                              text: '理論最高 ${_maxReachableScore()}',
+                              icon: Icons.trending_up,
+                            ),
                             if (_currentSpot.totalCatchKg != null)
                               _HudChip(
                                 text: '漁獲 ${_currentSpot.totalCatchKg}kg/月',
@@ -369,6 +473,11 @@ class _FishingInIshikawaGameScreenState extends State<FishingInIshikawaGameScree
                                     '写真 ${_scenicPhotoIndex + 1}/${_scenicPhotos.length}',
                                 icon: Icons.photo,
                                 onTap: _openScenerySourceUrl,
+                              ),
+                            if (_phase == FishingPhase.biteWindow)
+                              _HudChip(
+                                text: '緑ゾーンでHIT',
+                                icon: Icons.tune,
                               ),
                           ],
                         ),
@@ -462,6 +571,75 @@ class _FishingInIshikawaGameScreenState extends State<FishingInIshikawaGameScree
                           ),
                         ),
                       ),
+                      if (_phase == FishingPhase.biteWindow)
+                        Positioned(
+                          left: 16,
+                          right: 16,
+                          bottom: 84,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 10,
+                            ),
+                            decoration: BoxDecoration(
+                              color: colorScheme.surface.withValues(alpha: 0.86),
+                              borderRadius: BorderRadius.circular(
+                                AppConstants.cardBorderRadius,
+                              ),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '合わせゲージ（残り$_remainingBiteSeconds秒）',
+                                  style: Theme.of(context).textTheme.labelMedium,
+                                ),
+                                const SizedBox(height: 8),
+                                SizedBox(
+                                  height: 14,
+                                  child: Stack(
+                                    children: [
+                                      Positioned.fill(
+                                        child: DecoratedBox(
+                                          decoration: BoxDecoration(
+                                            color: colorScheme.surfaceContainerHighest,
+                                            borderRadius: BorderRadius.circular(999),
+                                          ),
+                                        ),
+                                      ),
+                                      Positioned(
+                                        left: (_hookTargetCenter - (_hookTargetWidth / 2)) *
+                                            (constraints.maxWidth - 56),
+                                        width:
+                                            _hookTargetWidth * (constraints.maxWidth - 56),
+                                        top: 0,
+                                        bottom: 0,
+                                        child: DecoratedBox(
+                                          decoration: BoxDecoration(
+                                            color: Colors.green.withValues(alpha: 0.75),
+                                            borderRadius: BorderRadius.circular(999),
+                                          ),
+                                        ),
+                                      ),
+                                      Positioned(
+                                        left: (_hookMeter * (constraints.maxWidth - 56)) - 3,
+                                        top: -2,
+                                        bottom: -2,
+                                        child: Container(
+                                          width: 6,
+                                          decoration: BoxDecoration(
+                                            color: colorScheme.error,
+                                            borderRadius: BorderRadius.circular(999),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
                       Positioned(
                         left: 12,
                         right: 12,
@@ -479,7 +657,7 @@ class _FishingInIshikawaGameScreenState extends State<FishingInIshikawaGameScree
                               Expanded(
                                 child: FilledButton(
                                   onPressed: canCast ? _castLine : null,
-                                  child: const Text('投げる'),
+                                  child: Text('投げる（残り$_baitRemaining）'),
                                 ),
                               ),
                               const SizedBox(width: 8),
