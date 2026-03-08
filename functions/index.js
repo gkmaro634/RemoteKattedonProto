@@ -13,41 +13,101 @@ function setCorsHeaders(res) {
 }
 
 function downloadText(url) {
+  const MAX_REDIRECTS = 5;
   return new Promise((resolve, reject) => {
-    https
-      .get(url, (response) => {
-        if (response.statusCode < 200 || response.statusCode >= 300) {
-          reject(new Error(`Upstream status ${response.statusCode}`));
-          response.resume();
-          return;
-        }
+    const doRequest = (currentUrl, redirectsRemaining) => {
+      https
+        .get(currentUrl, (response) => {
+          const status = response.statusCode || 0;
 
-        response.setEncoding('utf8');
-        let body = '';
-        response.on('data', (chunk) => {
-          body += chunk;
-        });
-        response.on('end', () => resolve(body));
-      })
-      .on('error', reject);
+          // Handle redirects (3xx with Location header)
+          if (
+            status >= 300 &&
+            status < 400 &&
+            response.headers &&
+            response.headers.location &&
+            redirectsRemaining > 0
+          ) {
+            try {
+              const redirectUrl = new URL(
+                response.headers.location,
+                currentUrl
+              ).toString();
+              response.resume();
+              doRequest(redirectUrl, redirectsRemaining - 1);
+              return;
+            } catch (e) {
+              response.resume();
+              reject(e);
+              return;
+            }
+          }
+
+          if (status < 200 || status >= 300) {
+            response.resume();
+            reject(new Error(`Upstream status ${status}`));
+            return;
+          }
+
+          response.setEncoding('utf8');
+          let body = '';
+          response.on('data', (chunk) => {
+            body += chunk;
+          });
+          response.on('end', () => resolve(body));
+        })
+        .on('error', reject);
+    };
+
+    doRequest(url, MAX_REDIRECTS);
   });
 }
 
 function downloadBuffer(url) {
+  const MAX_REDIRECTS = 5;
   return new Promise((resolve, reject) => {
-    https
-      .get(url, (response) => {
-        if (response.statusCode < 200 || response.statusCode >= 300) {
-          reject(new Error(`Upstream status ${response.statusCode}`));
-          response.resume();
-          return;
-        }
+    const doRequest = (currentUrl, redirectsRemaining) => {
+      https
+        .get(currentUrl, (response) => {
+          const status = response.statusCode || 0;
 
-        const chunks = [];
-        response.on('data', (chunk) => chunks.push(chunk));
-        response.on('end', () => resolve(Buffer.concat(chunks)));
-      })
-      .on('error', reject);
+          // Handle redirects (3xx with Location header)
+          if (
+            status >= 300 &&
+            status < 400 &&
+            response.headers &&
+            response.headers.location &&
+            redirectsRemaining > 0
+          ) {
+            try {
+              const redirectUrl = new URL(
+                response.headers.location,
+                currentUrl
+              ).toString();
+              response.resume();
+              doRequest(redirectUrl, redirectsRemaining - 1);
+              return;
+            } catch (e) {
+              response.resume();
+              reject(e);
+              return;
+            }
+          }
+
+          if (status < 200 || status >= 300) {
+            response.resume();
+            reject(new Error(`Upstream status ${status}`));
+            return;
+          }
+
+          const chunks = [];
+          response.on('data', (chunk) => chunks.push(chunk));
+          response.on('end', () => resolve(Buffer.concat(chunks)));
+        })
+        .on('error', reject);
+    };
+
+    doRequest(url, MAX_REDIRECTS);
   });
 }
 
