@@ -71,7 +71,7 @@ class _FishingInIshikawaGameScreenState extends State<FishingInIshikawaGameScree
     try {
       final photos = await _scenicPhotoService.fetchNearSpotGallery(
         widget.spot,
-        maxCount: 5,
+        maxCount: 20,
       );
       if (!mounted || photos.isEmpty) {
         return;

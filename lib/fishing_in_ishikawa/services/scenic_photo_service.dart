@@ -73,7 +73,7 @@ class ScenicPhotoService {
 
   Future<List<ScenicPhoto>> fetchNearSpotGallery(
     FishingSpot spot, {
-    int maxCount = 5,
+    int maxCount = 20,
   }) async {
     final geoUri = Uri.https(_apiHost, '/w/api.php', {
       'action': 'query',
@@ -122,12 +122,31 @@ class ScenicPhotoService {
     final seaLike = collected
         .where((e) => e.score >= 4 && _isSeaLikeText(e.searchableText))
         .toList();
-    if (seaLike.isEmpty) {
-      return const [];
+    if (seaLike.isNotEmpty) {
+      seaLike.sort((a, b) => b.score.compareTo(a.score));
+      return seaLike.take(maxCount).map((e) => e.photo).toList();
     }
 
-    seaLike.sort((a, b) => b.score.compareTo(a.score));
-    return seaLike.take(maxCount).map((e) => e.photo).toList();
+    // Some areas (especially port/offshore spots) have sparse metadata.
+    // Use a softer coastal filter before giving up.
+    final coastalLike = collected
+        .where((e) => e.score >= 1 && _hasCoastalSignal(e.searchableText))
+        .toList();
+    if (coastalLike.isNotEmpty) {
+      coastalLike.sort((a, b) => b.score.compareTo(a.score));
+      return coastalLike.take(maxCount).map((e) => e.photo).toList();
+    }
+
+    // Final fallback for specific port spots: avoid blank gallery.
+    if (spot.id == 'kanazawa_port' || spot.id == 'kaga_offshore') {
+      final fallback = collected.where((e) => e.score >= 0).toList();
+      if (fallback.isNotEmpty) {
+        fallback.sort((a, b) => b.score.compareTo(a.score));
+        return fallback.take(maxCount).map((e) => e.photo).toList();
+      }
+    }
+
+    return const [];
   }
 
   Future<ScenicPhoto?> fetchNearSpot(FishingSpot spot) async {
@@ -163,6 +182,32 @@ class ScenicPhotoService {
 
   bool _isSeaLikeText(String text) {
     for (final keyword in _seaKeywords) {
+      if (text.contains(keyword)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  bool _hasCoastalSignal(String text) {
+    const coastalSignals = [
+      'coast',
+      'shore',
+      'bay',
+      'harbor',
+      'harbour',
+      'port',
+      'seaside',
+      'waterfront',
+      '日本海',
+      '海',
+      '海岸',
+      '湾',
+      '港',
+      '漁港',
+    ];
+
+    for (final keyword in coastalSignals) {
       if (text.contains(keyword)) {
         return true;
       }
