@@ -96,7 +96,15 @@ function normalizeFishName(raw) {
 
   if (v.includes('ﾏｱｼﾞ') || v.includes('あじ')) return 'アジ';
   if (v.includes('ﾒﾊﾞﾙ') || v.includes('めばる')) return 'メバル';
-  if (v.includes('ｸﾛﾀﾞｲ') || v.includes('たい')) return 'クロダイ';
+  if (
+    v.includes('ｸﾛﾀﾞｲ') ||
+    v.includes('クロダイ') ||
+    v.includes('黒鯛') ||
+    v.includes('ﾁﾇ') ||
+    v.includes('チヌ')
+  ) {
+    return 'クロダイ';
+  }
   if (v.includes('ｽｽﾞｷ') || v.includes('しーばす')) return 'シーバス';
   if (v.includes('ｶｻｺﾞ')) return 'カサゴ';
   if (v.includes('ﾉﾛｹﾞﾝｹﾞ') || v.includes('ｹﾞﾝｹﾞ')) return 'ゲンゲ';
