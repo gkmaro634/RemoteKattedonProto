@@ -22,9 +22,57 @@ class ScenicPhoto {
 class ScenicPhotoService {
   static const String _apiHost = 'commons.wikimedia.org';
   static const String _geoRadius = '10000';
+  static const List<String> _seaKeywords = [
+    'sea',
+    'ocean',
+    'coast',
+    'coastal',
+    'shore',
+    'beach',
+    'bay',
+    'harbor',
+    'harbour',
+    'port',
+    'seaside',
+    'waterfront',
+    'japan sea',
+    '日本海',
+    '海',
+    '海岸',
+    '湾',
+    '漁港',
+    '港',
+    '海辺',
+    '波',
+  ];
+
+  static const List<String> _nonSeaKeywords = [
+    'temple',
+    'shrine',
+    'station',
+    'museum',
+    'school',
+    'mountain',
+    'street',
+    'forest',
+    '寺',
+    '神社',
+    '駅',
+    '学校',
+    '山',
+    '公園',
+    '城',
+  ];
+
+  static const Map<String, List<String>> _spotSearchHints = {
+    'noto_north': ['Noto coast Ishikawa', 'Outer Noto Peninsula coast'],
+    'nanao_bay': ['Nanao Bay Ishikawa', '七尾湾 海'],
+    'kanazawa_port': ['Kanazawa Port Ishikawa sea', '金沢港 海'],
+    'kaga_offshore': ['Kaga coast Ishikawa sea', '加賀 海岸 日本海'],
+  };
 
   Future<ScenicPhoto?> fetchNearSpot(FishingSpot spot) async {
-    final uri = Uri.https(_apiHost, '/w/api.php', {
+    final geoUri = Uri.https(_apiHost, '/w/api.php', {
       'action': 'query',
       'format': 'json',
       'generator': 'geosearch',
@@ -39,27 +87,59 @@ class ScenicPhotoService {
       'origin': '*',
     });
 
+    final geoCandidates = await _fetchCandidates(geoUri);
+    final geoBest = _pickBestSeaLike(spot, geoCandidates);
+    if (geoBest != null) {
+      return geoBest.photo;
+    }
+
+    final hints = _spotSearchHints[spot.id] ?? const [];
+    for (final hint in hints) {
+      final searchUri = Uri.https(_apiHost, '/w/api.php', {
+        'action': 'query',
+        'format': 'json',
+        'generator': 'search',
+        'gsrnamespace': '6',
+        'gsrlimit': '15',
+        'gsrsearch': hint,
+        'prop': 'imageinfo',
+        'iiprop': 'url|extmetadata|user|mime|size',
+        'iiurlwidth': '1800',
+        'origin': '*',
+      });
+
+      final searchCandidates = await _fetchCandidates(searchUri);
+      final searchBest = _pickBestSeaLike(spot, searchCandidates);
+      if (searchBest != null) {
+        return searchBest.photo;
+      }
+    }
+
+    return null;
+  }
+
+  Future<List<_PhotoCandidate>> _fetchCandidates(Uri uri) async {
     final response = await http.get(uri).timeout(const Duration(seconds: 8));
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      return null;
+      return const [];
     }
 
     final decoded = json.decode(response.body);
     if (decoded is! Map<String, dynamic>) {
-      return null;
+      return const [];
     }
 
     final query = decoded['query'];
     if (query is! Map<String, dynamic>) {
-      return null;
+      return const [];
     }
 
     final pages = query['pages'];
     if (pages is! Map<String, dynamic> || pages.isEmpty) {
-      return null;
+      return const [];
     }
 
-    final candidates = <ScenicPhoto>[];
+    final candidates = <_PhotoCandidate>[];
 
     for (final value in pages.values) {
       if (value is! Map<String, dynamic>) {
@@ -101,6 +181,7 @@ class ScenicPhotoService {
       final metadata = imageInfo['extmetadata'];
       String? license;
       String? author;
+      var searchableText = title;
       if (metadata is Map<String, dynamic>) {
         license = (metadata['LicenseShortName'] is Map)
             ? (metadata['LicenseShortName']['value'] ?? '').toString()
@@ -108,25 +189,109 @@ class ScenicPhotoService {
         author = (metadata['Artist'] is Map)
             ? (metadata['Artist']['value'] ?? '').toString()
             : null;
+
+        final description = (metadata['ImageDescription'] is Map)
+            ? (metadata['ImageDescription']['value'] ?? '').toString()
+            : '';
+        final objectName = (metadata['ObjectName'] is Map)
+            ? (metadata['ObjectName']['value'] ?? '').toString()
+            : '';
+        searchableText = '$title $description $objectName';
       }
 
       candidates.add(
-        ScenicPhoto(
-          imageUrl: imageUrl,
-          title: title.replaceFirst('File:', ''),
-          pageUrl: descriptionUrl,
-          license: license,
-          author: author,
+        _PhotoCandidate(
+          photo: ScenicPhoto(
+            imageUrl: imageUrl,
+            title: title.replaceFirst('File:', ''),
+            pageUrl: descriptionUrl,
+            license: license,
+            author: author,
+          ),
+          searchableText: _stripHtml(searchableText).toLowerCase(),
         ),
       );
     }
 
-    if (candidates.isEmpty) {
-      return null;
+    return candidates;
+  }
+
+  _ScoredPhoto? _pickBestSeaLike(
+    FishingSpot spot,
+    List<_PhotoCandidate> candidates,
+  ) {
+    _ScoredPhoto? best;
+    for (final candidate in candidates) {
+      final score = _seaScore(spot, candidate.searchableText);
+      if (score < 2) {
+        continue;
+      }
+
+      if (best == null || score > best.score) {
+        best = _ScoredPhoto(photo: candidate.photo, score: score);
+      }
     }
 
-    // Stable photo selection per spot.
-    final index = spot.id.codeUnits.fold<int>(0, (sum, c) => sum + c) % candidates.length;
-    return candidates[index];
+    return best;
   }
+
+  int _seaScore(FishingSpot spot, String text) {
+    var score = 0;
+
+    for (final keyword in _seaKeywords) {
+      if (text.contains(keyword)) {
+        score += 2;
+      }
+    }
+
+    for (final keyword in _nonSeaKeywords) {
+      if (text.contains(keyword)) {
+        score -= 2;
+      }
+    }
+
+    final spotName = spot.name.toLowerCase();
+    if (text.contains('nanao') && spot.id == 'nanao_bay') {
+      score += 2;
+    }
+    if (text.contains('kanazawa') && spot.id == 'kanazawa_port') {
+      score += 2;
+    }
+    if (text.contains('noto') && spot.id == 'noto_north') {
+      score += 2;
+    }
+    if ((text.contains('kaga') || text.contains('加賀')) &&
+        spot.id == 'kaga_offshore') {
+      score += 2;
+    }
+    if (text.contains(spotName)) {
+      score += 1;
+    }
+
+    return score;
+  }
+
+  String _stripHtml(String input) {
+    return input.replaceAll(RegExp(r'<[^>]*>'), ' ').replaceAll('&nbsp;', ' ');
+  }
+}
+
+class _PhotoCandidate {
+  final ScenicPhoto photo;
+  final String searchableText;
+
+  const _PhotoCandidate({
+    required this.photo,
+    required this.searchableText,
+  });
+}
+
+class _ScoredPhoto {
+  final ScenicPhoto photo;
+  final int score;
+
+  const _ScoredPhoto({
+    required this.photo,
+    required this.score,
+  });
 }
