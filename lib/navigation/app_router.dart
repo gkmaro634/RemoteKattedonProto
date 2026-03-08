@@ -3,6 +3,7 @@ import 'package:remote_kattedon/screens/home_screen.dart';
 import 'package:remote_kattedon/screens/game_selection_screen.dart';
 import 'package:remote_kattedon/game_deshelling_crab/screens/deshellingcrab_start_screen.dart';
 import 'package:remote_kattedon/game_deshelling_crab/presentation/screens/game_screen.dart';
+import 'package:remote_kattedon/fishing_in_ishikawa/models/fishing_models.dart';
 import 'package:remote_kattedon/fishing_in_ishikawa/screens/fishing_start_screen.dart';
 import 'package:remote_kattedon/fishing_in_ishikawa/screens/fishing_game_screen.dart';
 import 'package:remote_kattedon/game_genge/screens/genge_start_screen.dart';
@@ -75,7 +76,11 @@ class AppRouter {
       // 石川釣りゲーム画面
       GoRoute(
         path: RouteNames.fishingInIshikawaGame,
-        builder: (context, state) => const FishingInIshikawaGameScreen(),
+        builder: (context, state) {
+          final spotId = state.uri.queryParameters['spot'];
+          final spot = IshikawaFishingSpots.byId(spotId);
+          return FishingInIshikawaGameScreen(spot: spot);
+        },
       ),
     ],
   );
