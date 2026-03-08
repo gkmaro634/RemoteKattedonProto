@@ -21,15 +21,14 @@ class FishingInIshikawaStartScreen extends StatefulWidget {
 
 class _FishingInIshikawaStartScreenState
     extends State<FishingInIshikawaStartScreen> {
-  static const int _mapZoom = 9;
-  static const int _mapTileX = 450;
-  static const int _mapTileY = 199;
+  static const int _mapZoom = 7;
+  static const int _mapTileX = 112;
+  static const int _mapTileY = 49;
   static const double _tileSize = 256.0;
-  static const double _pinWidgetWidth = 124.0;
-  static const double _pinWidgetHeight = 74.0;
+  static const double _pinIconSize = 32.0;
 
   static const String _ishikawaMapTileUrl =
-      'https://cyberjapandata.gsi.go.jp/xyz/std/9/450/199.png';
+      'https://cyberjapandata.gsi.go.jp/xyz/std/7/112/49.png';
 
   final FishingOpenDataService _openDataService = FishingOpenDataService();
 
@@ -231,46 +230,45 @@ class _FishingInIshikawaStartScreenState
                                         constraints,
                                       );
                                       final left =
-                                          (position.dx - (_pinWidgetWidth / 2))
-                                              .clamp(
-                                                0.0,
-                                                constraints.maxWidth -
-                                                    _pinWidgetWidth,
-                                              );
-                                      final top =
-                                          (position.dy - 36.0).clamp(
-                                                0.0,
-                                                constraints.maxHeight -
-                                                    _pinWidgetHeight,
-                                              );
+                                          (position.dx - (_pinIconSize / 2)).clamp(
+                                        0.0,
+                                        constraints.maxWidth - _pinIconSize,
+                                      );
+                                      final top = (position.dy - _pinIconSize)
+                                          .clamp(
+                                        0.0,
+                                        constraints.maxHeight - _pinIconSize,
+                                      );
 
                                       return Positioned(
                                         left: left,
                                         top: top,
-                                        width: _pinWidgetWidth,
-                                        height: _pinWidgetHeight,
-                                        child: InkWell(
-                                          borderRadius:
-                                              BorderRadius.circular(24),
-                                          onTap: () {
-                                            setState(() {
-                                              _selectedSpot = _enrichedSpot(spot);
-                                            });
-                                          },
-                                          child: Column(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.center,
-                                            children: [
-                                              Icon(
-                                                Icons.location_on,
-                                                size: _selectedSpot.id == spot.id
-                                                    ? 34
-                                                    : 28,
-                                                color: _selectedSpot.id == spot.id
-                                                    ? colorScheme.error
-                                                    : colorScheme.primary,
+                                        child: Column(
+                                          children: [
+                                            InkWell(
+                                              borderRadius:
+                                                  BorderRadius.circular(24),
+                                              onTap: () {
+                                                setState(() {
+                                                  _selectedSpot = _enrichedSpot(spot);
+                                                });
+                                              },
+                                              child: SizedBox(
+                                                width: _pinIconSize,
+                                                height: _pinIconSize,
+                                                child: Icon(
+                                                  Icons.location_on,
+                                                  size: _selectedSpot.id == spot.id
+                                                      ? 34
+                                                      : 28,
+                                                  color: _selectedSpot.id == spot.id
+                                                      ? colorScheme.error
+                                                      : colorScheme.primary,
+                                                ),
                                               ),
-                                              Container(
+                                            ),
+                                            IgnorePointer(
+                                              child: Container(
                                                 padding:
                                                     const EdgeInsets.symmetric(
                                                   horizontal: 8,
@@ -292,8 +290,8 @@ class _FishingInIshikawaStartScreenState
                                                       .bodySmall,
                                                 ),
                                               ),
-                                            ],
-                                          ),
+                                            ),
+                                          ],
                                         ),
                                       );
                                     },
