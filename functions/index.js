@@ -208,7 +208,8 @@ function parseLandingWorkbook(buffer) {
   return {
     datasetName: '石川県水揚げデータ（地域別集計）',
     source: DEFAULT_SOURCE_URL,
-    observedMonth: latestYear > 0 ? String(latestYear) : '',
+    observedYear: latestYear > 0 ? String(latestYear) : '',
+    observedMonth: '',
     spots,
   };
 }
