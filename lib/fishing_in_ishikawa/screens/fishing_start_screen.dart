@@ -19,6 +19,9 @@ class FishingInIshikawaStartScreen extends StatefulWidget {
 
 class _FishingInIshikawaStartScreenState
     extends State<FishingInIshikawaStartScreen> {
+  static const String _ishikawaMapTileUrl =
+      'https://cyberjapandata.gsi.go.jp/xyz/std/9/450/199.png';
+
   final FishingOpenDataService _openDataService = FishingOpenDataService();
 
   FishingSpot _selectedSpot = IshikawaFishingSpots.all.first;
@@ -122,18 +125,59 @@ class _FishingInIshikawaStartScreenState
                             return Stack(
                               children: [
                                 Positioned.fill(
-                                  child: DecoratedBox(
-                                    decoration: BoxDecoration(
-                                      color: colorScheme.primaryContainer,
-                                      borderRadius: BorderRadius.circular(
-                                        AppConstants.cardBorderRadius,
-                                      ),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(
+                                      AppConstants.cardBorderRadius,
                                     ),
-                                    child: CustomPaint(
-                                      painter: _IshikawaMapPainter(
-                                        fillColor: colorScheme.surface,
-                                        strokeColor: colorScheme.primary,
-                                      ),
+                                    child: Stack(
+                                      fit: StackFit.expand,
+                                      children: [
+                                        Image.network(
+                                          _ishikawaMapTileUrl,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (context, error, stackTrace) {
+                                            return CustomPaint(
+                                              painter: _IshikawaMapPainter(
+                                                fillColor: colorScheme.surface,
+                                                strokeColor: colorScheme.primary,
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                        DecoratedBox(
+                                          decoration: BoxDecoration(
+                                            gradient: LinearGradient(
+                                              begin: Alignment.topCenter,
+                                              end: Alignment.bottomCenter,
+                                              colors: [
+                                                colorScheme.surface
+                                                    .withValues(alpha: 0.18),
+                                                colorScheme.surface
+                                                    .withValues(alpha: 0.34),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                Positioned(
+                                  right: 8,
+                                  bottom: 8,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: colorScheme.surface
+                                          .withValues(alpha: 0.84),
+                                      borderRadius: BorderRadius.circular(999),
+                                    ),
+                                    child: Text(
+                                      '地図: 国土地理院',
+                                      style: Theme.of(context).textTheme.labelSmall,
                                     ),
                                   ),
                                 ),
