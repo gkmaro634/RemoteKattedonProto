@@ -143,8 +143,15 @@ API取得に失敗した場合は `assets/data/ishikawa_fishing_open_data.json` 
 https://asia-northeast1-fishxtech-hackathon-teamd.cloudfunctions.net/ishikawaOpenDataProxy
 ```
 
-デフォルト接続先（Web以外）：
+上記の Cloud Functions は、内部で `DEFAULT_SOURCE_URL` に設定された
+CKAN 上の `石川県水揚げデータ.xlsx`（非Web／生データ）を取得して集計します。
+つまり、
 
+- Web デフォルト接続先: Cloud Functions プロキシ（上記 URL）
+- Web 以外のデフォルトデータソース: Cloud Functions 内部の `DEFAULT_SOURCE_URL` が指す `石川県水揚げデータ.xlsx`
+
+なお、以下の CSV は関連するオープンデータの一例であり、
+アプリや Functions が参照するデフォルトソースではありません（参考用）。
 - 実際の非Webデフォルトデータソースは、Functions 内の `DEFAULT_SOURCE_URL` で指定している **「石川県水揚げデータ.xlsx」** です。
 - 上記 Excel オープンデータと対応する CKAN 上の CSV リソースは参考用に次の通りです：
 ```text
