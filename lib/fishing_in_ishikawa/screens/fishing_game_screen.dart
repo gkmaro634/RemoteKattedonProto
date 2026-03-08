@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:remote_kattedon/core/constants/app_constants.dart';
 import 'package:remote_kattedon/fishing_in_ishikawa/models/fishing_models.dart';
 import 'package:remote_kattedon/fishing_in_ishikawa/services/open_data_service.dart';
@@ -284,16 +285,38 @@ class _FishingInIshikawaGameScreenState extends State<FishingInIshikawaGameScree
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                     if (_openDataSource != null)
-                      InkWell(
-                        onTap: _openSourceUrl,
-                        child: Text(
-                          _openDataSource!,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: colorScheme.primary,
-                            decoration: TextDecoration.underline,
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Flexible(
+                            child: InkWell(
+                              onTap: _openSourceUrl,
+                              child: Text(
+                                _openDataSource!,
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: colorScheme.primary,
+                                  decoration: TextDecoration.underline,
+                                ),
+                              ),
+                            ),
                           ),
-                        ),
+                          IconButton(
+                            tooltip: 'URLをコピー',
+                            icon: const Icon(Icons.copy, size: 18),
+                            onPressed: () async {
+                              await Clipboard.setData(
+                                ClipboardData(text: _openDataSource!),
+                              );
+                              if (!context.mounted) {
+                                return;
+                              }
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('取得元URLをコピーしました')),
+                              );
+                            },
+                          ),
+                        ],
                       ),
                   ],
                 ),

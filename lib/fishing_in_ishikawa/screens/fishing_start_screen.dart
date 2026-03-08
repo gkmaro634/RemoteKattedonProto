@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:remote_kattedon/core/theme/app_theme.dart';
 import 'package:remote_kattedon/core/constants/app_constants.dart';
@@ -385,15 +386,34 @@ class _SourceLinkText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      child: Text(
-        url,
-        style: TextStyle(
-          color: Theme.of(context).colorScheme.primary,
-          decoration: TextDecoration.underline,
+    return Row(
+      children: [
+        Expanded(
+          child: InkWell(
+            onTap: onTap,
+            child: Text(
+              url,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.primary,
+                decoration: TextDecoration.underline,
+              ),
+            ),
+          ),
         ),
-      ),
+        IconButton(
+          tooltip: 'URLをコピー',
+          icon: const Icon(Icons.copy, size: 18),
+          onPressed: () async {
+            await Clipboard.setData(ClipboardData(text: url));
+            if (!context.mounted) {
+              return;
+            }
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('取得元URLをコピーしました')),
+            );
+          },
+        ),
+      ],
     );
   }
 }
