@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -19,6 +21,13 @@ class FishingInIshikawaStartScreen extends StatefulWidget {
 
 class _FishingInIshikawaStartScreenState
     extends State<FishingInIshikawaStartScreen> {
+  static const int _mapZoom = 9;
+  static const int _mapTileX = 450;
+  static const int _mapTileY = 199;
+  static const double _tileSize = 256.0;
+  static const double _pinWidgetWidth = 124.0;
+  static const double _pinWidgetHeight = 74.0;
+
   static const String _ishikawaMapTileUrl =
       'https://cyberjapandata.gsi.go.jp/xyz/std/9/450/199.png';
 
@@ -72,6 +81,39 @@ class _FishingInIshikawaStartScreenState
       return;
     }
     await launchUrl(uri, mode: LaunchMode.platformDefault);
+  }
+
+  Offset _spotPositionInMap(FishingSpot spot, BoxConstraints constraints) {
+    final worldSize = (1 << _mapZoom) * _tileSize;
+
+    final lonX = ((spot.longitude + 180.0) / 360.0) * worldSize;
+    final latRad = spot.latitude * math.pi / 180.0;
+    final latY =
+        (1 - (math.log(math.tan(latRad) + 1 / math.cos(latRad)) / math.pi)) /
+            2 *
+        worldSize;
+
+    final tileLeft = _mapTileX * _tileSize;
+    final tileTop = _mapTileY * _tileSize;
+    final xInTile = lonX - tileLeft;
+    final yInTile = latY - tileTop;
+
+    final scale = math.max(
+      constraints.maxWidth / _tileSize,
+      constraints.maxHeight / _tileSize,
+    );
+    final renderedWidth = _tileSize * scale;
+    final renderedHeight = _tileSize * scale;
+    final cropLeft = (renderedWidth - constraints.maxWidth) / 2;
+    final cropTop = (renderedHeight - constraints.maxHeight) / 2;
+
+    final x = (xInTile * scale) - cropLeft;
+    final y = (yInTile * scale) - cropTop;
+
+    return Offset(
+      x.clamp(0.0, constraints.maxWidth),
+      y.clamp(0.0, constraints.maxHeight),
+    );
   }
 
   List<Widget> _topFishChips(FishingSpot spot) {
@@ -182,50 +224,79 @@ class _FishingInIshikawaStartScreenState
                                   ),
                                 ),
                                 for (final spot in IshikawaFishingSpots.all)
-                                  Positioned(
-                                    left: (constraints.maxWidth * spot.mapXFactor) -
-                                        22,
-                                    top: (constraints.maxHeight * spot.mapYFactor) -
-                                        32,
-                                    child: InkWell(
-                                      borderRadius: BorderRadius.circular(24),
-                                      onTap: () {
-                                        setState(() {
-                                          _selectedSpot = _enrichedSpot(spot);
-                                        });
-                                      },
-                                      child: Column(
-                                        children: [
-                                          Icon(
-                                            Icons.location_on,
-                                            size: _selectedSpot.id == spot.id
-                                                ? 34
-                                                : 28,
-                                            color: _selectedSpot.id == spot.id
-                                                ? colorScheme.error
-                                                : colorScheme.primary,
+                                  Builder(
+                                    builder: (context) {
+                                      final position = _spotPositionInMap(
+                                        spot,
+                                        constraints,
+                                      );
+                                      final left =
+                                          (position.dx - (_pinWidgetWidth / 2))
+                                              .clamp(
+                                                0.0,
+                                                constraints.maxWidth -
+                                                    _pinWidgetWidth,
+                                              );
+                                      final top =
+                                          (position.dy - 36.0).clamp(
+                                                0.0,
+                                                constraints.maxHeight -
+                                                    _pinWidgetHeight,
+                                              );
+
+                                      return Positioned(
+                                        left: left,
+                                        top: top,
+                                        width: _pinWidgetWidth,
+                                        height: _pinWidgetHeight,
+                                        child: InkWell(
+                                          borderRadius:
+                                              BorderRadius.circular(24),
+                                          onTap: () {
+                                            setState(() {
+                                              _selectedSpot = _enrichedSpot(spot);
+                                            });
+                                          },
+                                          child: Column(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              Icon(
+                                                Icons.location_on,
+                                                size: _selectedSpot.id == spot.id
+                                                    ? 34
+                                                    : 28,
+                                                color: _selectedSpot.id == spot.id
+                                                    ? colorScheme.error
+                                                    : colorScheme.primary,
+                                              ),
+                                              Container(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                  horizontal: 8,
+                                                  vertical: 4,
+                                                ),
+                                                decoration: BoxDecoration(
+                                                  color: colorScheme.surface
+                                                      .withValues(alpha: 0.85),
+                                                  borderRadius:
+                                                      BorderRadius.circular(999),
+                                                ),
+                                                child: Text(
+                                                  spot.name,
+                                                  maxLines: 1,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                  style: Theme.of(context)
+                                                      .textTheme
+                                                      .bodySmall,
+                                                ),
+                                              ),
+                                            ],
                                           ),
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 8,
-                                              vertical: 4,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: colorScheme.surface
-                                                  .withValues(alpha: 0.85),
-                                              borderRadius:
-                                                  BorderRadius.circular(999),
-                                            ),
-                                            child: Text(
-                                              spot.name,
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .bodySmall,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
+                                        ),
+                                      );
+                                    },
                                   ),
                               ],
                             );
