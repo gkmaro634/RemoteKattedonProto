@@ -61,6 +61,21 @@ class _FishingInIshikawaStartScreenState
     return baseSpot.withOpenData(spotData);
   }
 
+  List<Widget> _topFishChips(FishingSpot spot) {
+    final sorted = spot.fishWeights.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    final total = sorted.fold<int>(0, (sum, e) => sum + e.value);
+
+    if (total <= 0 || sorted.isEmpty) {
+      return const [Chip(label: Text('データなし'))];
+    }
+
+    return sorted.take(3).map((entry) {
+      final ratio = (entry.value / total) * 100;
+      return Chip(label: Text('${entry.key} ${ratio.toStringAsFixed(1)}%'));
+    }).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -178,6 +193,24 @@ class _FishingInIshikawaStartScreenState
                       ),
                     ),
                   ),
+                  if (_selectedSpot.fishWeights.isNotEmpty)
+                    Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(AppConstants.defaultPadding),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('上位魚種と割合（Top 3）'),
+                            const SizedBox(height: AppConstants.smallPadding),
+                            Wrap(
+                              spacing: AppConstants.smallPadding,
+                              runSpacing: AppConstants.smallPadding,
+                              children: _topFishChips(_selectedSpot),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   if (_selectedSpot.fishWeights.isNotEmpty)
                     _OpenDataVisualizationCard(spot: _selectedSpot),
                   Card(

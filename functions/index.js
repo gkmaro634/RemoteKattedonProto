@@ -121,7 +121,7 @@ function parseLandingWorkbook(buffer) {
     const spotId = mapDistrictToSpotId(row['地区名']);
     if (!spotId) continue;
 
-    const fish = normalizeFishName(row['銘柄 名']);
+    const fish = normalizeFishName(row['銘柄名'] ?? row['銘柄 名']);
     if (!fish) continue;
 
     const amount = toNumber(row['数量年計']);
