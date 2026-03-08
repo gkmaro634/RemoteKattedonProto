@@ -145,6 +145,8 @@ https://asia-northeast1-fishxtech-hackathon-teamd.cloudfunctions.net/ishikawaOpe
 
 デフォルト接続先（Web以外）：
 
+- 実際の非Webデフォルトデータソースは、Functions 内の `DEFAULT_SOURCE_URL` で指定している **「石川県水揚げデータ.xlsx」** です。
+- 上記 Excel オープンデータと対応する CKAN 上の CSV リソースは参考用に次の通りです：
 ```text
 https://ckan.opendata.pref.ishikawa.lg.jp/dataset/b9e71183-5d58-4aa3-8a52-6c436993fa2e/resource/3a8105cc-4b7e-40b5-aa99-ca614d0fa32f/download/catch_amount_type.csv
 ```
