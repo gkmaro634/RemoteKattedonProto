@@ -42,27 +42,6 @@ function downloadText(url) {
               return;
             }
           }
-
-          if (status < 200 || status >= 300) {
-            response.resume();
-            reject(new Error(`Upstream status ${status}`));
-            return;
-          }
-
-          response.setEncoding('utf8');
-          let body = '';
-          response.on('data', (chunk) => {
-            body += chunk;
-          });
-          response.on('end', () => resolve(body));
-        })
-        .on('error', reject);
-    };
-
-    doRequest(url, MAX_REDIRECTS);
-  });
-}
-
 function downloadBuffer(url) {
   const MAX_REDIRECTS = 5;
   return new Promise((resolve, reject) => {
