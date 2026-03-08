@@ -137,6 +137,8 @@ class _FishingInIshikawaGameScreenState extends State<FishingInIshikawaGameScree
     }
   }
 
+  String get _sceneryPhotoTileUrl => _currentSpot.sceneryPhotoTileUrl;
+
   @override
   void dispose() {
     _cancelTimers();
@@ -251,12 +253,22 @@ class _FishingInIshikawaGameScreenState extends State<FishingInIshikawaGameScree
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(AppConstants.defaultPadding),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    const Icon(Icons.landscape),
-                    const SizedBox(width: AppConstants.smallPadding),
-                    Text('景色: ${_currentSpot.sceneryName}'),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.landscape),
+                        const SizedBox(width: AppConstants.smallPadding),
+                        Text('景色: ${_currentSpot.sceneryName}'),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '背景: 国土地理院シームレス空中写真',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
                   ],
                 ),
               ),
@@ -374,6 +386,29 @@ class _FishingInIshikawaGameScreenState extends State<FishingInIshikawaGameScree
                                     begin: Alignment.topCenter,
                                     end: Alignment.bottomCenter,
                                     colors: skyColors,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            Positioned.fill(
+                              child: Image.network(
+                                _sceneryPhotoTileUrl,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return const SizedBox.shrink();
+                                },
+                              ),
+                            ),
+                            Positioned.fill(
+                              child: DecoratedBox(
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topCenter,
+                                    end: Alignment.bottomCenter,
+                                    colors: [
+                                      colorScheme.scrim.withValues(alpha: 0.18),
+                                      colorScheme.scrim.withValues(alpha: 0.42),
+                                    ],
                                   ),
                                 ),
                               ),

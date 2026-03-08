@@ -33,6 +33,9 @@ class FishingSpot {
   final String sceneryName;
   final double mapXFactor;
   final double mapYFactor;
+  final double latitude;
+  final double longitude;
+  final int sceneryZoom;
   final List<String> fishCandidates;
   final Map<String, int> fishWeights;
   final int? totalCatchKg;
@@ -43,6 +46,9 @@ class FishingSpot {
     required this.sceneryName,
     required this.mapXFactor,
     required this.mapYFactor,
+    required this.latitude,
+    required this.longitude,
+    this.sceneryZoom = 12,
     required this.fishCandidates,
     this.fishWeights = const {},
     this.totalCatchKg,
@@ -62,10 +68,32 @@ class FishingSpot {
       sceneryName: sceneryName,
       mapXFactor: mapXFactor,
       mapYFactor: mapYFactor,
+      latitude: latitude,
+      longitude: longitude,
+      sceneryZoom: sceneryZoom,
       fishCandidates: mergedCandidates,
       fishWeights: data.fishCatchKg,
       totalCatchKg: data.totalCatchKg,
     );
+  }
+
+  /// Open photo tile around this spot (GSI seamless photo, open data).
+  String get sceneryPhotoTileUrl {
+    final zoom = sceneryZoom;
+    final x = _long2tile(longitude, zoom);
+    final y = _lat2tile(latitude, zoom);
+    return 'https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/$zoom/$x/$y.jpg';
+  }
+
+  static int _long2tile(double lon, int zoom) {
+    return ((lon + 180.0) / 360.0 * (1 << zoom)).floor();
+  }
+
+  static int _lat2tile(double lat, int zoom) {
+    final latRad = lat * pi / 180.0;
+    final n = 1 << zoom;
+    final value = (1 - (log(tan(latRad) + 1 / cos(latRad)) / pi)) / 2 * n;
+    return value.floor();
   }
 
   String get topFish {
@@ -171,6 +199,8 @@ class IshikawaFishingSpots {
       sceneryName: '能登の外浦',
       mapXFactor: 0.35,
       mapYFactor: 0.22,
+      latitude: 37.43,
+      longitude: 136.92,
       fishCandidates: ['メバル', 'カサゴ', 'アジ', 'のどぐろ'],
     ),
     FishingSpot(
@@ -179,6 +209,8 @@ class IshikawaFishingSpots {
       sceneryName: '穏やかな湾内',
       mapXFactor: 0.58,
       mapYFactor: 0.43,
+      latitude: 37.08,
+      longitude: 136.99,
       fishCandidates: ['クロダイ', 'メバル', 'アジ', 'シーバス'],
     ),
     FishingSpot(
@@ -187,6 +219,8 @@ class IshikawaFishingSpots {
       sceneryName: '港の夜景と防波堤',
       mapXFactor: 0.54,
       mapYFactor: 0.69,
+      latitude: 36.61,
+      longitude: 136.60,
       fishCandidates: ['シーバス', 'アジ', 'カサゴ', 'クロダイ'],
     ),
     FishingSpot(
@@ -195,6 +229,8 @@ class IshikawaFishingSpots {
       sceneryName: '加賀の海岸線',
       mapXFactor: 0.45,
       mapYFactor: 0.86,
+      latitude: 36.25,
+      longitude: 136.28,
       fishCandidates: ['のどぐろ', 'ゲンゲ', 'カサゴ', 'アジ'],
     ),
   ];
