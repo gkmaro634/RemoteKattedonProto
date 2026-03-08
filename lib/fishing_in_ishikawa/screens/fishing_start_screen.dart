@@ -23,9 +23,12 @@ class _FishingInIshikawaStartScreenState
   IshikawaFishingOpenData? _openData;
   String? _openDataError;
 
+  late final String _endpointLabel;
+
   @override
   void initState() {
     super.initState();
+    _endpointLabel = _openDataService.currentEndpoint();
     _loadOpenData();
   }
 
@@ -177,16 +180,17 @@ class _FishingInIshikawaStartScreenState
                   ),
                   if (_selectedSpot.fishWeights.isNotEmpty)
                     _OpenDataVisualizationCard(spot: _selectedSpot),
-                  if (_openData != null)
-                    Card(
-                      child: ListTile(
-                        leading: const Icon(Icons.dataset),
-                        title: Text(_openData!.datasetName),
-                        subtitle: Text(
-                          '対象月: ${_openData!.observedMonth}\n取得元: ${_openData!.source}',
-                        ),
+                  Card(
+                    child: ListTile(
+                      leading: const Icon(Icons.dataset),
+                      title: Text(_openData?.datasetName ?? 'オープンデータ読み込み中...'),
+                      subtitle: Text(
+                        _openData == null
+                            ? '接続先: $_endpointLabel'
+                            : '対象月: ${_openData!.observedMonth}\n取得元: ${_openData!.source}',
                       ),
                     ),
+                  ),
                   if (_openDataError != null)
                     Padding(
                       padding: const EdgeInsets.only(top: AppConstants.smallPadding),

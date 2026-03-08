@@ -28,6 +28,8 @@ class FishingOpenDataService {
 
   static IshikawaFishingOpenData? _cache;
 
+  String currentEndpoint() => _apiUrl;
+
   Future<IshikawaFishingOpenData> load() async {
     if (_cache != null) {
       return _cache!;

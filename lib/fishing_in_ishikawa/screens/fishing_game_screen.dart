@@ -50,6 +50,7 @@ class _FishingInIshikawaGameScreenState extends State<FishingInIshikawaGameScree
     super.initState();
     _currentSpot = widget.spot;
     _message = '${_currentSpot.name}で「投げる」を押して釣りを始めよう';
+    _openDataLabel = '接続先: ${_openDataService.currentEndpoint()}';
     _swimController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 7),
