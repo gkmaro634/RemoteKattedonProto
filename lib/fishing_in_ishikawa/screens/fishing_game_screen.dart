@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:remote_kattedon/core/constants/app_constants.dart';
 import 'package:remote_kattedon/fishing_in_ishikawa/models/fishing_models.dart';
 import 'package:remote_kattedon/fishing_in_ishikawa/services/open_data_service.dart';
+import 'package:remote_kattedon/fishing_in_ishikawa/services/scenic_photo_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 enum FishingPhase {
@@ -32,12 +33,14 @@ class _FishingInIshikawaGameScreenState extends State<FishingInIshikawaGameScree
     with SingleTickerProviderStateMixin {
   final Random _random = Random();
   final FishingOpenDataService _openDataService = FishingOpenDataService();
+  final ScenicPhotoService _scenicPhotoService = ScenicPhotoService();
 
   FishingPhase _phase = FishingPhase.waiting;
   late String _message;
   late FishingSpot _currentSpot;
   String? _openDataLabel;
   String? _openDataSource;
+  ScenicPhoto? _scenicPhoto;
   int _score = 0;
   int _combo = 0;
   int _remainingBiteSeconds = 0;
@@ -59,6 +62,21 @@ class _FishingInIshikawaGameScreenState extends State<FishingInIshikawaGameScree
       duration: const Duration(seconds: 7),
     )..repeat(reverse: true);
     _loadOpenData();
+    _loadSceneryPhoto();
+  }
+
+  Future<void> _loadSceneryPhoto() async {
+    try {
+      final photo = await _scenicPhotoService.fetchNearSpot(widget.spot);
+      if (!mounted || photo == null) {
+        return;
+      }
+      setState(() {
+        _scenicPhoto = photo;
+      });
+    } catch (_) {
+      // Keep default GSI photo tile background when scenic fetch fails.
+    }
   }
 
   Future<void> _loadOpenData() async {
@@ -107,6 +125,18 @@ class _FishingInIshikawaGameScreenState extends State<FishingInIshikawaGameScree
     await launchUrl(uri, mode: LaunchMode.platformDefault);
   }
 
+  Future<void> _openScenerySourceUrl() async {
+    final source = _scenicPhoto?.pageUrl;
+    if (source == null) {
+      return;
+    }
+    final uri = Uri.tryParse(source);
+    if (uri == null) {
+      return;
+    }
+    await launchUrl(uri, mode: LaunchMode.platformDefault);
+  }
+
   List<Color> _skyColors(ColorScheme colorScheme) {
     switch (_currentSpot.id) {
       case 'noto_north':
@@ -138,6 +168,7 @@ class _FishingInIshikawaGameScreenState extends State<FishingInIshikawaGameScree
   }
 
   String get _sceneryPhotoTileUrl => _currentSpot.sceneryPhotoTileUrl;
+  String get _effectiveSceneryUrl => _scenicPhoto?.imageUrl ?? _sceneryPhotoTileUrl;
 
   @override
   void dispose() {
@@ -266,9 +297,26 @@ class _FishingInIshikawaGameScreenState extends State<FishingInIshikawaGameScree
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '背景: 国土地理院シームレス空中写真',
+                      _scenicPhoto == null
+                          ? '背景: 国土地理院シームレス空中写真'
+                          : '背景: 周辺の実写風景（Wikimedia Commons）',
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
+                    if (_scenicPhoto != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: InkWell(
+                          onTap: _openScenerySourceUrl,
+                          child: Text(
+                            '写真出典: ${_scenicPhoto!.title}',
+                            style: TextStyle(
+                              color: colorScheme.primary,
+                              decoration: TextDecoration.underline,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -392,7 +440,7 @@ class _FishingInIshikawaGameScreenState extends State<FishingInIshikawaGameScree
                             ),
                             Positioned.fill(
                               child: Image.network(
-                                _sceneryPhotoTileUrl,
+                                _effectiveSceneryUrl,
                                 fit: BoxFit.cover,
                                 errorBuilder: (context, error, stackTrace) {
                                   return const SizedBox.shrink();
