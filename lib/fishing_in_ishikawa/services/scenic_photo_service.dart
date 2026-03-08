@@ -71,7 +71,10 @@ class ScenicPhotoService {
     'kaga_offshore': ['Kaga coast Ishikawa sea', '加賀 海岸 日本海'],
   };
 
-  Future<ScenicPhoto?> fetchNearSpot(FishingSpot spot) async {
+  Future<List<ScenicPhoto>> fetchNearSpotGallery(
+    FishingSpot spot, {
+    int maxCount = 5,
+  }) async {
     final geoUri = Uri.https(_apiHost, '/w/api.php', {
       'action': 'query',
       'format': 'json',
@@ -87,11 +90,11 @@ class ScenicPhotoService {
       'origin': '*',
     });
 
+    final collected = <_ScoredPhoto>[];
+    final seen = <String>{};
+
     final geoCandidates = await _fetchCandidates(geoUri);
-    final geoBest = _pickBestSeaLike(spot, geoCandidates);
-    if (geoBest != null) {
-      return geoBest.photo;
-    }
+    _collectScored(spot, geoCandidates, collected, seen);
 
     final hints = _spotSearchHints[spot.id] ?? const [];
     for (final hint in hints) {
@@ -109,13 +112,62 @@ class ScenicPhotoService {
       });
 
       final searchCandidates = await _fetchCandidates(searchUri);
-      final searchBest = _pickBestSeaLike(spot, searchCandidates);
-      if (searchBest != null) {
-        return searchBest.photo;
-      }
+      _collectScored(spot, searchCandidates, collected, seen);
     }
 
-    return null;
+    if (collected.isEmpty) {
+      return const [];
+    }
+
+    final seaLike = collected
+        .where((e) => e.score >= 4 && _isSeaLikeText(e.searchableText))
+        .toList();
+    if (seaLike.isEmpty) {
+      return const [];
+    }
+
+    seaLike.sort((a, b) => b.score.compareTo(a.score));
+    return seaLike.take(maxCount).map((e) => e.photo).toList();
+  }
+
+  Future<ScenicPhoto?> fetchNearSpot(FishingSpot spot) async {
+    final gallery = await fetchNearSpotGallery(spot, maxCount: 1);
+    if (gallery.isEmpty) {
+      return null;
+    }
+    return gallery.first;
+  }
+
+  void _collectScored(
+    FishingSpot spot,
+    List<_PhotoCandidate> candidates,
+    List<_ScoredPhoto> out,
+    Set<String> seen,
+  ) {
+    for (final candidate in candidates) {
+      if (seen.contains(candidate.photo.pageUrl)) {
+        continue;
+      }
+      seen.add(candidate.photo.pageUrl);
+
+      final score = _seaScore(spot, candidate.searchableText);
+      out.add(
+        _ScoredPhoto(
+          photo: candidate.photo,
+          score: score,
+          searchableText: candidate.searchableText,
+        ),
+      );
+    }
+  }
+
+  bool _isSeaLikeText(String text) {
+    for (final keyword in _seaKeywords) {
+      if (text.contains(keyword)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   Future<List<_PhotoCandidate>> _fetchCandidates(Uri uri) async {
@@ -216,25 +268,6 @@ class ScenicPhotoService {
     return candidates;
   }
 
-  _ScoredPhoto? _pickBestSeaLike(
-    FishingSpot spot,
-    List<_PhotoCandidate> candidates,
-  ) {
-    _ScoredPhoto? best;
-    for (final candidate in candidates) {
-      final score = _seaScore(spot, candidate.searchableText);
-      if (score < 2) {
-        continue;
-      }
-
-      if (best == null || score > best.score) {
-        best = _ScoredPhoto(photo: candidate.photo, score: score);
-      }
-    }
-
-    return best;
-  }
-
   int _seaScore(FishingSpot spot, String text) {
     var score = 0;
 
@@ -289,9 +322,11 @@ class _PhotoCandidate {
 class _ScoredPhoto {
   final ScenicPhoto photo;
   final int score;
+  final String searchableText;
 
   const _ScoredPhoto({
     required this.photo,
     required this.score,
+    required this.searchableText,
   });
 }

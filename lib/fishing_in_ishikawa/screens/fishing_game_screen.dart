@@ -40,7 +40,8 @@ class _FishingInIshikawaGameScreenState extends State<FishingInIshikawaGameScree
   late FishingSpot _currentSpot;
   String? _openDataLabel;
   String? _openDataSource;
-  ScenicPhoto? _scenicPhoto;
+  List<ScenicPhoto> _scenicPhotos = const [];
+  int _scenicPhotoIndex = 0;
   int _score = 0;
   int _combo = 0;
   int _remainingBiteSeconds = 0;
@@ -49,6 +50,7 @@ class _FishingInIshikawaGameScreenState extends State<FishingInIshikawaGameScree
 
   Timer? _biteTimer;
   Timer? _countdownTimer;
+  Timer? _scenerySwitchTimer;
   late final AnimationController _swimController;
 
   @override
@@ -67,12 +69,25 @@ class _FishingInIshikawaGameScreenState extends State<FishingInIshikawaGameScree
 
   Future<void> _loadSceneryPhoto() async {
     try {
-      final photo = await _scenicPhotoService.fetchNearSpot(widget.spot);
-      if (!mounted || photo == null) {
+      final photos = await _scenicPhotoService.fetchNearSpotGallery(
+        widget.spot,
+        maxCount: 5,
+      );
+      if (!mounted || photos.isEmpty) {
         return;
       }
       setState(() {
-        _scenicPhoto = photo;
+        _scenicPhotos = photos;
+        _scenicPhotoIndex = 0;
+      });
+      _scenerySwitchTimer?.cancel();
+      _scenerySwitchTimer = Timer.periodic(const Duration(seconds: 8), (_) {
+        if (!mounted || _scenicPhotos.length < 2) {
+          return;
+        }
+        setState(() {
+          _scenicPhotoIndex = (_scenicPhotoIndex + 1) % _scenicPhotos.length;
+        });
       });
     } catch (_) {
       // Keep default GSI photo tile background when scenic fetch fails.
@@ -126,7 +141,7 @@ class _FishingInIshikawaGameScreenState extends State<FishingInIshikawaGameScree
   }
 
   Future<void> _openScenerySourceUrl() async {
-    final source = _scenicPhoto?.pageUrl;
+    final source = _currentScenicPhoto?.pageUrl;
     if (source == null) {
       return;
     }
@@ -168,11 +183,16 @@ class _FishingInIshikawaGameScreenState extends State<FishingInIshikawaGameScree
   }
 
   String get _sceneryPhotoTileUrl => _currentSpot.sceneryPhotoTileUrl;
-  String get _effectiveSceneryUrl => _scenicPhoto?.imageUrl ?? _sceneryPhotoTileUrl;
+    ScenicPhoto? get _currentScenicPhoto =>
+      _scenicPhotos.isEmpty ? null : _scenicPhotos[_scenicPhotoIndex];
+
+    String get _effectiveSceneryUrl =>
+      _currentScenicPhoto?.imageUrl ?? _sceneryPhotoTileUrl;
 
   @override
   void dispose() {
     _cancelTimers();
+    _scenerySwitchTimer?.cancel();
     _swimController.dispose();
     super.dispose();
   }
@@ -277,306 +297,258 @@ class _FishingInIshikawaGameScreenState extends State<FishingInIshikawaGameScree
         title: Text('Fishing in ISHIKAWA - ${_currentSpot.name}'),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(AppConstants.largePadding),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(AppConstants.defaultPadding),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.landscape),
-                        const SizedBox(width: AppConstants.smallPadding),
-                        Text('景色: ${_currentSpot.sceneryName}'),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      _scenicPhoto == null
-                          ? '背景: 国土地理院シームレス空中写真'
-                          : '背景: 周辺の実写風景（Wikimedia Commons）',
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                    if (_scenicPhoto != null)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 2),
-                        child: InkWell(
-                          onTap: _openScenerySourceUrl,
-                          child: Text(
-                            '写真出典: ${_scenicPhoto!.title}',
-                            style: TextStyle(
-                              color: colorScheme.primary,
-                              decoration: TextDecoration.underline,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            ),
-            if (_currentSpot.totalCatchKg != null)
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(AppConstants.defaultPadding),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('推定漁獲量: ${_currentSpot.totalCatchKg}kg / 月'),
-                      Text('主な魚: ${_currentSpot.topFish}'),
-                    ],
-                  ),
-                ),
-              ),
-            if (_openDataLabel != null)
-              Padding(
-                padding: const EdgeInsets.only(bottom: AppConstants.smallPadding),
-                child: Column(
-                  children: [
-                    Text(
-                      _openDataLabel!,
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                    if (_openDataSource != null)
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Flexible(
-                            child: InkWell(
-                              onTap: _openSourceUrl,
-                              child: Text(
-                                _openDataSource!,
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: colorScheme.primary,
-                                  decoration: TextDecoration.underline,
-                                ),
-                              ),
-                            ),
-                          ),
-                          IconButton(
-                            tooltip: 'URLをコピー',
-                            icon: const Icon(Icons.copy, size: 18),
-                            onPressed: () async {
-                              await Clipboard.setData(
-                                ClipboardData(text: _openDataSource!),
-                              );
-                              if (!context.mounted) {
-                                return;
-                              }
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('取得元URLをコピーしました')),
-                              );
-                            },
-                          ),
-                        ],
-                      ),
-                  ],
-                ),
-              ),
-            const SizedBox(height: AppConstants.smallPadding),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(AppConstants.defaultPadding),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    Column(
-                      children: [
-                        const Text('スコア'),
-                        Text(
-                          '$_score',
-                          style: Theme.of(context).textTheme.headlineSmall,
-                        ),
-                      ],
-                    ),
-                    Column(
-                      children: [
-                        const Text('コンボ'),
-                        Text(
-                          '$_combo',
-                          style: Theme.of(context).textTheme.headlineSmall,
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: AppConstants.largePadding),
-            Expanded(
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  return ClipRRect(
-                    borderRadius: BorderRadius.circular(AppConstants.cardBorderRadius),
-                    child: AnimatedBuilder(
-                      animation: _swimController,
-                      builder: (context, child) {
-                        final swim1X = -40 +
-                            (constraints.maxWidth + 80) * _swimController.value;
-                        final swim2X = constraints.maxWidth +
-                            40 -
-                            (constraints.maxWidth + 80) * _swimController.value;
+        padding: const EdgeInsets.all(AppConstants.defaultPadding),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return ClipRRect(
+              borderRadius: BorderRadius.circular(AppConstants.cardBorderRadius),
+              child: AnimatedBuilder(
+                animation: _swimController,
+                builder: (context, child) {
+                  final swim1X =
+                      -40 + (constraints.maxWidth + 80) * _swimController.value;
+                  final swim2X = constraints.maxWidth +
+                      40 -
+                      (constraints.maxWidth + 80) * _swimController.value;
 
-                        return Stack(
+                  return Stack(
+                    children: [
+                      Positioned.fill(
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: skyColors,
+                            ),
+                          ),
+                        ),
+                      ),
+                      Positioned.fill(
+                        child: Image.network(
+                          _effectiveSceneryUrl,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return const SizedBox.shrink();
+                          },
+                        ),
+                      ),
+                      Positioned.fill(
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                colorScheme.scrim.withValues(alpha: 0.22),
+                                colorScheme.scrim.withValues(alpha: 0.46),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        top: 12,
+                        left: 12,
+                        right: 12,
+                        child: Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
                           children: [
-                            Positioned.fill(
-                              child: DecoratedBox(
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topCenter,
-                                    end: Alignment.bottomCenter,
-                                    colors: skyColors,
-                                  ),
-                                ),
+                            _HudChip(text: _currentSpot.name, icon: Icons.place),
+                            _HudChip(text: 'スコア $_score', icon: Icons.stars),
+                            _HudChip(text: 'コンボ $_combo', icon: Icons.bolt),
+                            if (_currentSpot.totalCatchKg != null)
+                              _HudChip(
+                                text: '漁獲 ${_currentSpot.totalCatchKg}kg/月',
+                                icon: Icons.dataset,
                               ),
-                            ),
-                            Positioned.fill(
-                              child: Image.network(
-                                _effectiveSceneryUrl,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return const SizedBox.shrink();
-                                },
+                            if (_currentScenicPhoto != null)
+                              _HudChip(
+                                text:
+                                    '写真 ${_scenicPhotoIndex + 1}/${_scenicPhotos.length}',
+                                icon: Icons.photo,
+                                onTap: _openScenerySourceUrl,
                               ),
-                            ),
-                            Positioned.fill(
-                              child: DecoratedBox(
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topCenter,
-                                    end: Alignment.bottomCenter,
-                                    colors: [
-                                      colorScheme.scrim.withValues(alpha: 0.18),
-                                      colorScheme.scrim.withValues(alpha: 0.42),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                            Positioned(
-                              top: 22,
-                              left: 24,
-                              child: Icon(
-                                Icons.cloud,
-                                color: Colors.white.withValues(alpha: 0.85),
-                                size: 40,
-                              ),
-                            ),
-                            Positioned(
-                              top: 32,
-                              right: 28,
-                              child: Icon(
-                                Icons.cloud,
-                                color: Colors.white.withValues(alpha: 0.75),
-                                size: 32,
-                              ),
-                            ),
-                            Positioned(
-                              left: 0,
-                              right: 0,
-                              bottom: 0,
-                              height: 140,
-                              child: DecoratedBox(
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topCenter,
-                                    end: Alignment.bottomCenter,
-                                    colors: [
-                                      colorScheme.secondaryContainer
-                                          .withValues(alpha: 0.7),
-                                      colorScheme.secondary.withValues(alpha: 0.95),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                            Positioned(
-                              left: swim1X,
-                              bottom: 56,
-                              child: Icon(
-                                Icons.set_meal,
-                                color: Colors.white.withValues(alpha: 0.8),
-                                size: 32,
-                              ),
-                            ),
-                            Positioned(
-                              left: swim2X,
-                              bottom: 92,
-                              child: Transform(
-                                alignment: Alignment.center,
-                                transform: Matrix4.identity()..scale(-1.0, 1.0),
-                                child: Icon(
-                                  Icons.set_meal,
-                                  color: Colors.white.withValues(alpha: 0.68),
-                                  size: 28,
-                                ),
-                              ),
-                            ),
-                            if (_phase == FishingPhase.biteWindow)
-                              Positioned(
-                                left: constraints.maxWidth * _biteFishXFactor,
-                                top: constraints.maxHeight * _biteFishYFactor,
-                                child: Icon(
-                                  Icons.set_meal,
-                                  color: colorScheme.tertiary,
-                                  size: 44,
-                                ),
-                              ),
-                            Center(
-                              child: Container(
-                                margin: const EdgeInsets.symmetric(
-                                  horizontal: AppConstants.defaultPadding,
-                                ),
-                                padding: const EdgeInsets.all(
-                                  AppConstants.defaultPadding,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: colorScheme.surface.withValues(alpha: 0.85),
-                                  borderRadius: BorderRadius.circular(
-                                    AppConstants.cardBorderRadius,
-                                  ),
-                                ),
-                                child: Text(
-                                  _message,
-                                  textAlign: TextAlign.center,
-                                  style: Theme.of(context).textTheme.titleLarge,
-                                ),
-                              ),
-                            ),
                           ],
-                        );
-                      },
-                    ),
+                        ),
+                      ),
+                      Positioned(
+                        top: 22,
+                        left: 24,
+                        child: Icon(
+                          Icons.cloud,
+                          color: Colors.white.withValues(alpha: 0.82),
+                          size: 40,
+                        ),
+                      ),
+                      Positioned(
+                        top: 32,
+                        right: 28,
+                        child: Icon(
+                          Icons.cloud,
+                          color: Colors.white.withValues(alpha: 0.72),
+                          size: 32,
+                        ),
+                      ),
+                      Positioned(
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        height: 150,
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                colorScheme.secondaryContainer
+                                    .withValues(alpha: 0.58),
+                                colorScheme.secondary.withValues(alpha: 0.94),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        left: swim1X,
+                        bottom: 72,
+                        child: Icon(
+                          Icons.set_meal,
+                          color: Colors.white.withValues(alpha: 0.82),
+                          size: 32,
+                        ),
+                      ),
+                      Positioned(
+                        left: swim2X,
+                        bottom: 104,
+                        child: Transform(
+                          alignment: Alignment.center,
+                          transform: Matrix4.identity()..scale(-1.0, 1.0),
+                          child: Icon(
+                            Icons.set_meal,
+                            color: Colors.white.withValues(alpha: 0.7),
+                            size: 28,
+                          ),
+                        ),
+                      ),
+                      if (_phase == FishingPhase.biteWindow)
+                        Positioned(
+                          left: constraints.maxWidth * _biteFishXFactor,
+                          top: constraints.maxHeight * _biteFishYFactor,
+                          child: Icon(
+                            Icons.set_meal,
+                            color: colorScheme.tertiary,
+                            size: 44,
+                          ),
+                        ),
+                      Align(
+                        alignment: Alignment.center,
+                        child: Container(
+                          margin: const EdgeInsets.symmetric(
+                            horizontal: AppConstants.defaultPadding,
+                          ),
+                          padding: const EdgeInsets.all(AppConstants.defaultPadding),
+                          decoration: BoxDecoration(
+                            color: colorScheme.surface.withValues(alpha: 0.82),
+                            borderRadius: BorderRadius.circular(
+                              AppConstants.cardBorderRadius,
+                            ),
+                          ),
+                          child: Text(
+                            _message,
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.titleLarge,
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        left: 12,
+                        right: 12,
+                        bottom: 12,
+                        child: Container(
+                          padding: const EdgeInsets.all(AppConstants.smallPadding),
+                          decoration: BoxDecoration(
+                            color: colorScheme.surface.withValues(alpha: 0.8),
+                            borderRadius: BorderRadius.circular(
+                              AppConstants.cardBorderRadius,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: FilledButton(
+                                  onPressed: canCast ? _castLine : null,
+                                  child: const Text('投げる'),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: FilledButton.tonal(
+                                  onPressed: canHook ? _hookFish : null,
+                                  child: const Text('釣る'),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: OutlinedButton(
+                                  onPressed: _resetGame,
+                                  child: const Text('リセット'),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   );
                 },
               ),
-            ),
-            const SizedBox(height: AppConstants.defaultPadding),
-            FilledButton(
-              onPressed: canCast ? _castLine : null,
-              child: const Text('投げる'),
-            ),
-            const SizedBox(height: AppConstants.smallPadding),
-            FilledButton.tonal(
-              onPressed: canHook ? _hookFish : null,
-              child: const Text('釣る'),
-            ),
-            const SizedBox(height: AppConstants.smallPadding),
-            OutlinedButton(
-              onPressed: _resetGame,
-              child: const Text('リセット'),
-            ),
-          ],
+            );
+          },
         ),
       ),
+    );
+  }
+}
+
+class _HudChip extends StatelessWidget {
+  final String text;
+  final IconData icon;
+  final VoidCallback? onTap;
+
+  const _HudChip({
+    required this.text,
+    required this.icon,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final content = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: colorScheme.surface.withValues(alpha: 0.78),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14),
+          const SizedBox(width: 4),
+          Text(text, style: Theme.of(context).textTheme.labelMedium),
+        ],
+      ),
+    );
+
+    if (onTap == null) {
+      return content;
+    }
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(999),
+      child: content,
     );
   }
 }
