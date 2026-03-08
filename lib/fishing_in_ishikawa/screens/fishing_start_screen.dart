@@ -6,6 +6,7 @@ import 'package:remote_kattedon/fishing_in_ishikawa/models/fishing_models.dart';
 import 'package:remote_kattedon/fishing_in_ishikawa/services/open_data_service.dart';
 import 'package:remote_kattedon/widgets/common_widgets.dart';
 import 'package:remote_kattedon/navigation/route_names.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class FishingInIshikawaStartScreen extends StatefulWidget {
   const FishingInIshikawaStartScreen({super.key});
@@ -59,6 +60,14 @@ class _FishingInIshikawaStartScreenState
       return baseSpot;
     }
     return baseSpot.withOpenData(spotData);
+  }
+
+  Future<void> _openUrl(String url) async {
+    final uri = Uri.tryParse(url);
+    if (uri == null) {
+      return;
+    }
+    await launchUrl(uri, mode: LaunchMode.platformDefault);
   }
 
   List<Widget> _topFishChips(FishingSpot spot) {
@@ -217,11 +226,29 @@ class _FishingInIshikawaStartScreenState
                     child: ListTile(
                       leading: const Icon(Icons.dataset),
                       title: Text(_openData?.datasetName ?? 'オープンデータ読み込み中...'),
-                      subtitle: Text(
-                        _openData == null
-                            ? '接続先: $_endpointLabel'
-                            : '対象月: ${_openData!.observedMonth}\n取得元: ${_openData!.source}',
-                      ),
+                      subtitle: _openData == null
+                          ? Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text('接続先:'),
+                                _SourceLinkText(
+                                  url: _endpointLabel,
+                                  onTap: () => _openUrl(_endpointLabel),
+                                ),
+                              ],
+                            )
+                          : Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('対象月: ${_openData!.observedMonth}'),
+                                const SizedBox(height: 2),
+                                const Text('取得元:'),
+                                _SourceLinkText(
+                                  url: _openData!.source,
+                                  onTap: () => _openUrl(_openData!.source),
+                                ),
+                              ],
+                            ),
                     ),
                   ),
                   if (_openDataError != null)
@@ -342,6 +369,30 @@ class _FishAmountBarRow extends StatelessWidget {
           const SizedBox(height: 4),
           LinearProgressIndicator(value: barValue),
         ],
+      ),
+    );
+  }
+}
+
+class _SourceLinkText extends StatelessWidget {
+  final String url;
+  final VoidCallback onTap;
+
+  const _SourceLinkText({
+    required this.url,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Text(
+        url,
+        style: TextStyle(
+          color: Theme.of(context).colorScheme.primary,
+          decoration: TextDecoration.underline,
+        ),
       ),
     );
   }

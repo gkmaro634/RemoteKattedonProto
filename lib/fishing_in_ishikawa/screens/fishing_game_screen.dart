@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:remote_kattedon/core/constants/app_constants.dart';
 import 'package:remote_kattedon/fishing_in_ishikawa/models/fishing_models.dart';
 import 'package:remote_kattedon/fishing_in_ishikawa/services/open_data_service.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 enum FishingPhase {
   waiting,
@@ -35,6 +36,7 @@ class _FishingInIshikawaGameScreenState extends State<FishingInIshikawaGameScree
   late String _message;
   late FishingSpot _currentSpot;
   String? _openDataLabel;
+  String? _openDataSource;
   int _score = 0;
   int _combo = 0;
   int _remainingBiteSeconds = 0;
@@ -76,8 +78,8 @@ class _FishingInIshikawaGameScreenState extends State<FishingInIshikawaGameScree
 
       setState(() {
         _currentSpot = widget.spot.withOpenData(spotData);
-        _openDataLabel =
-            '対象月: ${data.observedMonth} / 取得元: ${data.source}';
+        _openDataLabel = '対象月: ${data.observedMonth}';
+        _openDataSource = data.source;
         if (_phase == FishingPhase.waiting) {
           _message = '${_currentSpot.name}で「投げる」を押して釣りを始めよう';
         }
@@ -90,6 +92,18 @@ class _FishingInIshikawaGameScreenState extends State<FishingInIshikawaGameScree
         _openDataLabel = 'オープンデータの取得に失敗しました';
       });
     }
+  }
+
+  Future<void> _openSourceUrl() async {
+    final source = _openDataSource;
+    if (source == null) {
+      return;
+    }
+    final uri = Uri.tryParse(source);
+    if (uri == null) {
+      return;
+    }
+    await launchUrl(uri, mode: LaunchMode.platformDefault);
   }
 
   List<Color> _skyColors(ColorScheme colorScheme) {
@@ -262,10 +276,26 @@ class _FishingInIshikawaGameScreenState extends State<FishingInIshikawaGameScree
             if (_openDataLabel != null)
               Padding(
                 padding: const EdgeInsets.only(bottom: AppConstants.smallPadding),
-                child: Text(
-                  _openDataLabel!,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodySmall,
+                child: Column(
+                  children: [
+                    Text(
+                      _openDataLabel!,
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                    if (_openDataSource != null)
+                      InkWell(
+                        onTap: _openSourceUrl,
+                        child: Text(
+                          _openDataSource!,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: colorScheme.primary,
+                            decoration: TextDecoration.underline,
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ),
             const SizedBox(height: AppConstants.smallPadding),
