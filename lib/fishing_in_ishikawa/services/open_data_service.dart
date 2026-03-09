@@ -1,6 +1,8 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:csv/csv.dart';
+import 'package:excel/excel.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
@@ -25,20 +27,62 @@ class FishingOpenDataService {
 
   static const String _assetPath =
       'assets/data/ishikawa_fishing_open_data.json';
+    static const String _assetParsedWorkbookPath =
+      'assets/data/ishikawa_fishing_open_data_2025.12.18.parsed.json';
+    static const String _assetWorkbookPath =
+      'assets/data/ishikawa_fishing_open_data_2025.12.18.xlsx';
 
   static IshikawaFishingOpenData? _cache;
 
-  String currentEndpoint() => _apiUrl;
+  String currentEndpoint() {
+    if (_configuredApiUrl.isNotEmpty) {
+      return _configuredApiUrl;
+    }
+    return kIsWeb ? _assetParsedWorkbookPath : _assetWorkbookPath;
+  }
 
   Future<IshikawaFishingOpenData> load() async {
     if (_cache != null) {
       return _cache!;
     }
 
+    if (_configuredApiUrl.isEmpty) {
+      try {
+        final parsed = await _loadFromParsedWorkbookAsset();
+        _cache = parsed;
+        return _cache!;
+      } catch (_) {
+        // Continue to workbook or legacy JSON fallback.
+      }
+
+      if (!kIsWeb) {
+        try {
+          final localData = await _loadFromBundledWorkbook();
+          _cache = localData;
+          return _cache!;
+        } catch (_) {
+          // Fall through to bundled JSON as a safe local fallback.
+        }
+      }
+
+      try {
+        final assetData = await _loadFromAsset();
+        _cache = IshikawaFishingOpenData(
+          datasetName: assetData.datasetName,
+          source: 'ローカル同梱データ（assets/data）',
+          observedMonth: assetData.observedMonth,
+          spots: assetData.spots,
+        );
+        return _cache!;
+      } catch (_) {
+        // Continue to API fallback section.
+      }
+    }
+
     Object? apiError;
     try {
-      if (_apiUrl.isNotEmpty) {
-        final apiData = await _loadFromApi(_apiUrl);
+      if (_configuredApiUrl.isNotEmpty) {
+        final apiData = await _loadFromApi(_configuredApiUrl);
         _cache = apiData;
         return _cache!;
       }
@@ -54,6 +98,133 @@ class FishingOpenDataService {
       spots: assetData.spots,
     );
     return _cache!;
+  }
+
+  Future<IshikawaFishingOpenData> _loadFromParsedWorkbookAsset() async {
+    final jsonText = await rootBundle.loadString(_assetParsedWorkbookPath);
+    final jsonMap = json.decode(jsonText) as Map<String, dynamic>;
+    return IshikawaFishingOpenData.fromJson(jsonMap);
+  }
+
+  Future<IshikawaFishingOpenData> _loadFromBundledWorkbook() async {
+    final data = await rootBundle.load(_assetWorkbookPath);
+    final bytes = data.buffer.asUint8List(
+      data.offsetInBytes,
+      data.lengthInBytes,
+    );
+    final excel = Excel.decodeBytes(bytes);
+    final firstSheetName = excel.tables.keys.isEmpty ? null : excel.tables.keys.first;
+    if (firstSheetName == null) {
+      throw Exception('Workbook has no sheets');
+    }
+
+    final sheet = excel.tables[firstSheetName];
+    if (sheet == null || sheet.rows.isEmpty) {
+      throw Exception('Workbook sheet is empty');
+    }
+
+    final headerRowIndex = _findWorkbookHeaderRowIndex(sheet.rows);
+    if (headerRowIndex < 0) {
+      throw Exception('Workbook header row not found');
+    }
+
+    final header = sheet.rows[headerRowIndex]
+        .map((cell) => _cellToString(cell).trim())
+        .toList();
+
+    final districtIdx = _findHeaderIndex(header, ['地区名']);
+    final fishIdx = _findHeaderIndex(header, ['銘柄名', '銘柄 名']);
+    final amountIdx = _findHeaderIndex(header, ['数量年計']);
+    final yearIdx = _findHeaderIndex(header, ['年']);
+
+    if (districtIdx < 0 || fishIdx < 0 || amountIdx < 0) {
+      throw Exception('Workbook schema mismatch');
+    }
+
+    final Map<String, Map<String, int>> spotFish = {
+      for (final spot in IshikawaFishingSpots.all) spot.id: <String, int>{},
+    };
+    final Map<String, int> spotTotal = {
+      for (final spot in IshikawaFishingSpots.all) spot.id: 0,
+    };
+
+    var latestYear = 0;
+
+    for (var rowIndex = headerRowIndex + 1;
+        rowIndex < sheet.rows.length;
+        rowIndex++) {
+      final row = sheet.rows[rowIndex];
+      if (row.length <= amountIdx) {
+        continue;
+      }
+
+      final district = _cellAt(row, districtIdx);
+      final spotId = _districtToSpotId(district);
+      if (spotId == null) {
+        continue;
+      }
+
+      final fishName = _normalizeFishName(_cellAt(row, fishIdx));
+      if (fishName == null) {
+        continue;
+      }
+
+      final amount = _toInt(_cellAt(row, amountIdx)) ?? 0;
+      if (amount <= 0) {
+        continue;
+      }
+
+      if (yearIdx >= 0 && row.length > yearIdx) {
+        final year = _toInt(_cellAt(row, yearIdx)) ?? 0;
+        if (year > latestYear) {
+          latestYear = year;
+        }
+      }
+
+      final fishMap = spotFish[spotId]!;
+      fishMap[fishName] = (fishMap[fishName] ?? 0) + amount;
+      spotTotal[spotId] = (spotTotal[spotId] ?? 0) + amount;
+    }
+
+    _fillMissingSpotsWithEstimatedData(spotFish, spotTotal);
+
+    final spots = spotFish.entries
+        .map(
+          (entry) => SpotFishingOpenData(
+            spotId: entry.key,
+            totalCatchKg: spotTotal[entry.key] ?? 0,
+            fishCatchKg: entry.value,
+          ),
+        )
+        .toList();
+
+    return IshikawaFishingOpenData(
+      datasetName: '石川県水揚げデータ（ローカルXLSX）',
+      source: _assetWorkbookPath,
+      observedMonth: latestYear > 0 ? latestYear.toString() : '',
+      spots: spots,
+    );
+  }
+
+  int _findWorkbookHeaderRowIndex(List<List<Data?>> rows) {
+    for (var i = 0; i < rows.length; i++) {
+      final joined = rows[i].map(_cellToString).join(' ');
+      if (joined.contains('地区名') && joined.contains('数量年計')) {
+        return i;
+      }
+    }
+    return -1;
+  }
+
+  String _cellAt(List<Data?> row, int index) {
+    if (index < 0 || index >= row.length) {
+      return '';
+    }
+    return _cellToString(row[index]);
+  }
+
+  String _cellToString(Data? cell) {
+    return cell?.value?.toString() ?? '';
   }
 
   String _fallbackSourceLabel(Object? apiError) {
@@ -308,6 +479,28 @@ class FishingOpenDataService {
       return 'noto_north';
     }
     return null;
+  }
+
+  String? _districtToSpotId(String districtName) {
+    if (districtName.contains('加賀') || districtName.contains('小松')) {
+      return 'kaga_offshore';
+    }
+    if (districtName.contains('金沢') ||
+        districtName.contains('白山') ||
+        districtName.contains('かほく')) {
+      return 'kanazawa_port';
+    }
+    if (districtName.contains('七尾') || districtName.contains('能登町')) {
+      return 'nanao_bay';
+    }
+    if (districtName.contains('輪島') ||
+        districtName.contains('珠洲') ||
+        districtName.contains('志賀') ||
+        districtName.contains('羽咋') ||
+        districtName.contains('宝達')) {
+      return 'noto_north';
+    }
+    return _cityToSpotId(districtName);
   }
 
   String? _normalizeFishName(String raw) {
