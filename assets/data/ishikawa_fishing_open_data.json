@@ -1,0 +1,51 @@
+{
+  "datasetName": "石川県沿岸漁場サンプル統計",
+  "source": "Ishikawa Open Data (sample for app prototype)",
+  "observedMonth": "2026-02",
+  "spots": [
+    {
+      "spotId": "noto_north",
+      "totalCatchKg": 1240,
+      "fishCatchKg": {
+        "のどぐろ": 320,
+        "メバル": 290,
+        "カサゴ": 260,
+        "アジ": 220,
+        "ゲンゲ": 150
+      }
+    },
+    {
+      "spotId": "nanao_bay",
+      "totalCatchKg": 980,
+      "fishCatchKg": {
+        "クロダイ": 260,
+        "アジ": 250,
+        "シーバス": 210,
+        "メバル": 170,
+        "カサゴ": 90
+      }
+    },
+    {
+      "spotId": "kanazawa_port",
+      "totalCatchKg": 1120,
+      "fishCatchKg": {
+        "シーバス": 330,
+        "アジ": 280,
+        "クロダイ": 210,
+        "カサゴ": 170,
+        "メバル": 130
+      }
+    },
+    {
+      "spotId": "kaga_offshore",
+      "totalCatchKg": 860,
+      "fishCatchKg": {
+        "ゲンゲ": 250,
+        "のどぐろ": 230,
+        "カサゴ": 180,
+        "アジ": 120,
+        "メバル": 80
+      }
+    }
+  ]
+}

@@ -16,6 +16,9 @@ dependencies:
   flutter_riverpod: ^2.4.0
   audioplayers: ^5.2.0
   shared_preferences: ^2.2.0
+  http: ^1.2.2
+  csv: ^6.0.0
+  excel: ^4.0.6
 
 dev_dependencies:
   flutter_test:
@@ -30,6 +33,7 @@ flutter:
     - assets/images/genge/
     - assets/images/bora/
     - assets/images/icons/
+    - assets/data/
     - assets/audio/deshelling_crab/
     - assets/audio/genge/
 
