@@ -39,6 +39,8 @@ class BoraGameEngine {
       gameTime: 0,
       netSpeed: char.stats.netSpeed * 2.0,
       boraCountInNet: 0,
+      highScore: state.highScore,
+      isNewHighScore: false,
     );
     _boraSpawnTimer = 0;
     _boraDecreaseTimer = 0;

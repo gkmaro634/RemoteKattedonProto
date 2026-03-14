@@ -131,6 +131,8 @@ class GameState {
   double gameTime;
   double netSpeed;
   int boraCountInNet;
+  int highScore;
+  bool isNewHighScore;
 
   GameState({
     required this.phase,
@@ -147,6 +149,8 @@ class GameState {
     required this.gameTime,
     required this.netSpeed,
     required this.boraCountInNet,
+    required this.highScore,
+    this.isNewHighScore = false,
   });
 }
 
