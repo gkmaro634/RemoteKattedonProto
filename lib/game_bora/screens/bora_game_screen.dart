@@ -22,6 +22,7 @@ class _BoraGameScreenState extends ConsumerState<BoraGameScreen>
     with TickerProviderStateMixin {
   late AnimationController _animationController;
   ui.Image? _boraImage;
+  bool _hasShownHighScoreDialog = false;
 
   Future<void> _loadBoraImage() async {
     final data = await rootBundle.load('assets/images/bora/bora.png');
@@ -62,57 +63,94 @@ class _BoraGameScreenState extends ConsumerState<BoraGameScreen>
     super.dispose();
   }
 
+  void _showNewHighScoreDialog(BuildContext context, int score) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('🎉 おめでとう！'),
+          content: Text('新しいハイスコア $score を達成しました！'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   void _onCanvasTap(Offset position) {
     // not used for now
   }
 
   @override
   Widget build(BuildContext context) {
-    final gameState = ref.watch(boraGameProvider);
-    final character = gameState.character;
+    final gameStateAsync = ref.watch(boraGameProvider);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('ボラ待ちやぐら'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.go(RouteNames.gameSelection),
-        ),
-      ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            if (gameState.phase == GamePhase.waiting ||
-                gameState.phase == GamePhase.raising)
-              Container(
-                color: const Color(0xff141e2e),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(character != null ? '${character.emoji} ${character.name}' : '',
-                        style: const TextStyle(color: Colors.white)),
-                    Text(
-                      '⏱ ${max(0, 120 - gameState.gameTime.floor())}秒',
-                      style: TextStyle(
-                          color: gameState.gameTime > 100 ? Colors.redAccent : Colors.white),
-                    ),
-                  ],
-                ),
-              ),
-            Expanded(
-              child: GestureDetector(
-                onTapDown: (d) => _onCanvasTap(d.localPosition),
-                child: CustomPaint(
-                  painter: BoraGamePainter(gameState: gameState, boraImage: _boraImage),
-                  size: Size.infinite,
-                ),
-              ),
+    return gameStateAsync.when(
+      data: (gameState) {
+        // Show high score dialog if new high score achieved
+        if (gameState.phase == GamePhase.result &&
+            gameState.isNewHighScore &&
+            !_hasShownHighScoreDialog) {
+          _hasShownHighScoreDialog = true;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _showNewHighScoreDialog(context, gameState.score);
+          });
+        }
+
+        final character = gameState.character;
+
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text('ボラ待ちやぐら'),
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back),
+              onPressed: () => context.go(RouteNames.gameSelection),
             ),
-            _buildUiPanel(gameState, character),
-          ],
-        ),
-      ),
+          ),
+          body: SafeArea(
+            child: Column(
+              children: [
+                if (gameState.phase == GamePhase.waiting ||
+                    gameState.phase == GamePhase.raising)
+                  Container(
+                    color: const Color(0xff141e2e),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(character != null ? '${character.emoji} ${character.name}' : '',
+                            style: const TextStyle(color: Colors.white)),
+                        Text(
+                          '⏱ ${max(0, 120 - gameState.gameTime.floor())}秒',
+                          style: TextStyle(
+                              color: gameState.gameTime > 100 ? Colors.redAccent : Colors.white),
+                        ),
+                      ],
+                    ),
+                  ),
+                Expanded(
+                  child: GestureDetector(
+                    onTapDown: (d) => _onCanvasTap(d.localPosition),
+                    child: CustomPaint(
+                      painter: BoraGamePainter(gameState: gameState, boraImage: _boraImage),
+                      size: Size.infinite,
+                    ),
+                  ),
+                ),
+                _buildUiPanel(gameState, character),
+              ],
+            ),
+          ),
+        );
+      },
+      loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
+      error: (error, stack) => Scaffold(body: Center(child: Text('Error: $error'))),
     );
   }
 
@@ -269,6 +307,7 @@ class _BoraGameScreenState extends ConsumerState<BoraGameScreen>
           Text('逃げた: ${state.escapedBoras}尾', style: const TextStyle(color: Colors.white, fontSize: 12)),
           Text('時間: ${state.gameTime.floor()}秒', style: const TextStyle(color: Colors.white, fontSize: 12)),
           Text('スコア: ${state.score}', style: const TextStyle(color: Colors.white, fontSize: 12)),
+          Text('ハイスコア: ${state.highScore}', style: const TextStyle(color: Colors.white, fontSize: 12)),
           const SizedBox(height: 4),
           Row(
             children: [
