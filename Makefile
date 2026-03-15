@@ -46,3 +46,10 @@ run-open-data-local:
 # open hosting site
 open:
 	npx open-cli https://fishxtech-hackathon-teamd.web.app
+
+delete:
+	flutter clean
+	mkdir build
+	mkdir build\\web
+# 	mkdir -p build/web
+	firebase deploy --only hosting
